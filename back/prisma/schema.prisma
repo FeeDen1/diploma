@@ -1,0 +1,174 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+
+}
+
+enum UserRole {
+  student
+  adapter
+  admin
+}
+
+enum UserStatus {
+  pending
+  active
+  suspended
+}
+
+model User {
+  id           String     @id @default(uuid()) @db.Uuid
+  email        String     @unique @db.VarChar(100)
+  passwordHash String     @map("password_hash") @db.VarChar(255)
+  role         UserRole   @default(student)
+  status       UserStatus @default(pending)
+  firstName    String    @map("first_name") @db.VarChar(50)
+  lastName     String    @map("last_name") @db.VarChar(50)
+  ratingTotal  Int        @default(0) @map("rating_total")
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt    DateTime   @updatedAt @map("updated_at") @db.Timestamptz()
+
+  avatarFileId  String?  @unique @map("avatar_file_id") @db.Uuid
+  avatarFile    File?    @relation("AvatarFile", fields: [avatarFileId], references: [id], onDelete: SetNull)
+
+  refreshTokens     RefreshToken[]
+  groupMemberships  GroupMember[]
+  groupAdapterships GroupAdapter[]
+  submissions       TaskSubmission[]
+  uploadedFiles     File[]          @relation("UploadedFiles")
+
+  @@index([role, status])
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  tokenHash String   @map("token_hash") @db.VarChar(255)
+  expiresAt DateTime @map("expires_at") @db.Timestamptz()
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+model Group {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @db.VarChar(100)
+  year      Int
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  members  GroupMember[]
+  adapters GroupAdapter[]
+
+  @@map("groups")
+}
+
+model GroupMember {
+  groupId  String   @map("group_id") @db.Uuid
+  userId   String   @map("user_id") @db.Uuid
+  joinedAt DateTime @default(now()) @map("joined_at") @db.Timestamptz()
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, userId])
+  @@map("group_members")
+}
+
+model GroupAdapter {
+  groupId    String   @map("group_id") @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  assignedAt DateTime @default(now()) @map("assigned_at") @db.Timestamptz()
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, userId])
+  @@map("group_adapters")
+}
+
+enum TaskType {
+  general
+}
+
+enum SubmissionStatus {
+  pending
+  approved
+  rejected
+}
+
+model Task {
+  id          String   @id @default(uuid()) @db.Uuid
+  title       String   @db.VarChar(200)
+  description String   @db.Text
+  type        TaskType @default(general)
+  points      Int
+  taskFileId  String?  @unique @map("task_file_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  taskFile    File?            @relation("TaskFile", fields: [taskFileId], references: [id], onDelete: SetNull)
+  submissions TaskSubmission[]
+
+  @@map("tasks")
+}
+
+model TaskSubmission {
+  id               String           @id @default(uuid()) @db.Uuid
+  taskId           String           @map("task_id") @db.Uuid
+  studentId        String           @map("student_id") @db.Uuid
+  status           SubmissionStatus @default(pending)
+  submissionFileId String?          @unique @map("submission_file_id") @db.Uuid
+  createdAt        DateTime         @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt        DateTime         @updatedAt @map("updated_at") @db.Timestamptz()
+
+  task           Task  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  student        User  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  submissionFile File? @relation("SubmissionFile", fields: [submissionFileId], references: [id], onDelete: SetNull)
+
+  @@unique([taskId, studentId])
+  @@map("task_submissions")
+}
+
+enum FileType {
+  avatar
+  task
+  submission
+}
+
+enum FileVisibility {
+  public
+  private
+}
+
+model File {
+  id          String         @id @default(uuid()) @db.Uuid
+  ownerUserId String         @map("owner_user_id") @db.Uuid
+  bucket      String         @db.VarChar(100)
+  objectKey   String         @map("object_key") @db.VarChar(500)
+  visibility  FileVisibility @default(public)
+  mimeType    String         @map("mime_type") @db.VarChar(100)
+  sizeBytes   Int            @map("size_bytes")
+  type        FileType
+  createdAt   DateTime       @default(now()) @map("created_at") @db.Timestamptz()
+
+  owner          User            @relation("UploadedFiles", fields: [ownerUserId], references: [id], onDelete: Cascade)
+  avatarOf       User?           @relation("AvatarFile")
+  taskFile       Task?           @relation("TaskFile")
+  submissionFile TaskSubmission? @relation("SubmissionFile")
+
+  @@map("files")
+}

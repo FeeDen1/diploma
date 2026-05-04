@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: 'class',
   content: [
     './app/**/*.{js,jsx,ts,tsx}',
     './src/**/*.{js,jsx,ts,tsx}',
@@ -8,6 +9,17 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        background: 'rgb(var(--color-background) / <alpha-value>)',
+        surface: 'rgb(var(--color-surface) / <alpha-value>)',
+        'surface-secondary': 'rgb(var(--color-surface-secondary) / <alpha-value>)',
+        foreground: 'rgb(var(--color-foreground) / <alpha-value>)',
+        'foreground-secondary': 'rgb(var(--color-foreground-secondary) / <alpha-value>)',
+        border: 'rgb(var(--color-border) / <alpha-value>)',
+        destructive: 'rgb(var(--color-destructive) / <alpha-value>)',
+        muted: 'rgb(var(--color-muted) / <alpha-value>)',
+        success: 'rgb(var(--color-success) / <alpha-value>)',
+        warning: 'rgb(var(--color-warning) / <alpha-value>)',
+        'indicator-inactive': 'rgb(var(--color-indicator-inactive) / <alpha-value>)',
         primary: {
           50: '#EEF2FF',
           100: '#E0E7FF',
@@ -20,17 +32,8 @@ module.exports = {
           800: '#3730A3',
           900: '#312E81',
         },
-        background: '#F8FAFC',
-        surface: '#FFFFFF',
-        textPrimary: '#1E293B',
-        textSecondary: '#64748B',
-        border: '#E2E8F0',
-        success: '#22C55E',
-        warning: '#F59E0B',
-        error: '#EF4444',
       },
     },
   },
   plugins: [],
 };
-
