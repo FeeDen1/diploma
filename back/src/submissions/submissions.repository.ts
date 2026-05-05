@@ -19,12 +19,20 @@ export class SubmissionsRepository {
   async create(
     taskId: string,
     studentId: string,
-    submissionFileId?: string,
+    submissionFileId: string,
   ): Promise<SubmissionWithRelations> {
     return this.prisma.taskSubmission.create({
       data: { taskId, studentId, submissionFileId },
       include: INCLUDE_RELATIONS,
     }) as Promise<SubmissionWithRelations>;
+  }
+
+  async isSubmissionFileTaken(submissionFileId: string): Promise<boolean> {
+    const existing = await this.prisma.taskSubmission.findUnique({
+      where: { submissionFileId },
+      select: { id: true },
+    });
+    return existing !== null;
   }
 
   async findById(id: string): Promise<SubmissionWithRelations | null> {
@@ -74,7 +82,11 @@ export class SubmissionsRepository {
     studentId: string,
     taskPoints: number,
   ): Promise<SubmissionWithRelations> {
-    const ratingDelta = this.calculateRatingDelta(oldStatus, newStatus, taskPoints);
+    const ratingDelta = this.calculateRatingDelta(
+      oldStatus,
+      newStatus,
+      taskPoints,
+    );
 
     const [submission] = await this.prisma.$transaction([
       this.prisma.taskSubmission.update({
@@ -83,10 +95,12 @@ export class SubmissionsRepository {
         include: INCLUDE_RELATIONS,
       }),
       ...(ratingDelta !== 0
-        ? [this.prisma.user.update({
-            where: { id: studentId },
-            data: { ratingTotal: { increment: ratingDelta } },
-          })]
+        ? [
+            this.prisma.user.update({
+              where: { id: studentId },
+              data: { ratingTotal: { increment: ratingDelta } },
+            }),
+          ]
         : []),
     ]);
 

@@ -69,7 +69,9 @@ export class GroupsService {
     const user = await this.usersService.getUserById(userId);
 
     if (user.role !== 'adapter') {
-      throw new DomainValidationException('Пользователь должен иметь роль adapter');
+      throw new DomainValidationException(
+        'Пользователь должен иметь роль adapter',
+      );
     }
 
     const existing = await this.groupsRepository.findAdapter(groupId, userId);

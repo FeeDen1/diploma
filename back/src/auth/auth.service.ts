@@ -35,7 +35,10 @@ export class AuthService {
       throw new UnauthorizedException('Некорректный email или пароль');
     }
 
-    const passwordValid = await comparePasswords(dto.password, user.passwordHash);
+    const passwordValid = await comparePasswords(
+      dto.password,
+      user.passwordHash,
+    );
     if (!passwordValid) {
       throw new UnauthorizedException('Некорректный email или пароль');
     }
@@ -54,7 +57,8 @@ export class AuthService {
     }
 
     const tokenHash = hashToken(dto.refreshToken);
-    const stored = await this.refreshTokensRepository.findByTokenHash(tokenHash);
+    const stored =
+      await this.refreshTokensRepository.findByTokenHash(tokenHash);
 
     if (!stored || stored.expiresAt < new Date()) {
       throw new UnauthorizedException('Refresh-токен истёк или отозван');
@@ -88,11 +92,18 @@ export class AuthService {
     });
 
     const refreshTokenHash = hashToken(refreshToken);
-    const days = parseInt(this.configService.getOrThrow('JWT_REFRESH_EXPIRES_DAYS'), 10);
+    const days = parseInt(
+      this.configService.getOrThrow('JWT_REFRESH_EXPIRES_DAYS'),
+      10,
+    );
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + days);
 
-    await this.refreshTokensRepository.create(user.id, refreshTokenHash, expiresAt);
+    await this.refreshTokensRepository.create(
+      user.id,
+      refreshTokenHash,
+      expiresAt,
+    );
 
     const avatarUrl = user.avatarFile
       ? this.s3Service.getPublicUrl(user.avatarFile.objectKey)

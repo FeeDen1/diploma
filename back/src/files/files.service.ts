@@ -74,11 +74,41 @@ export class FilesService {
     return file;
   }
 
-  async deleteFile(id: string, requestUserId: string, isAdmin: boolean): Promise<void> {
+  /**
+   * Проверяет, что файл существует, принадлежит указанному пользователю
+   * и имеет ожидаемый тип. Возвращает сам файл для дальнейшего использования.
+   */
+  async assertOwnedAndType(
+    fileId: string,
+    ownerUserId: string,
+    expectedType: FileType,
+  ): Promise<File> {
+    const file = await this.getFileById(fileId);
+
+    if (file.ownerUserId !== ownerUserId) {
+      throw new ForbiddenException('Файл принадлежит другому пользователю');
+    }
+
+    if (file.type !== expectedType) {
+      throw new DomainValidationException(
+        `Ожидался файл типа ${expectedType}, получен ${file.type}`,
+      );
+    }
+
+    return file;
+  }
+
+  async deleteFile(
+    id: string,
+    requestUserId: string,
+    isAdmin: boolean,
+  ): Promise<void> {
     const file = await this.getFileById(id);
 
     if (!isAdmin && file.ownerUserId !== requestUserId) {
-      throw new ForbiddenException('Удалять файл может только владелец или администратор');
+      throw new ForbiddenException(
+        'Удалять файл может только владелец или администратор',
+      );
     }
 
     await this.s3Service.delete(file.objectKey);

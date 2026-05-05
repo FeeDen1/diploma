@@ -1,8 +1,20 @@
 import {
-  Body, Controller, Delete, Get, Param,
-  ParseUUIDPipe, Patch, Post, UseGuards,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { UserRole } from '../../generated/prisma/client';
 import { GroupsService } from './groups.service';
 import { CreateGroupDto } from './dto/create-group.dto';
@@ -37,14 +49,18 @@ export class GroupsController {
   @Get()
   async getAll(): Promise<ReadGroupDto[]> {
     const groups = await this.groupsService.getAllGroups();
-    return groups.map(ReadGroupDto.fromEntity);
+    return groups.map((g) => ReadGroupDto.fromEntity(g));
   }
 
-  @ApiOperation({ summary: 'Получить группу по ID (с участниками и кураторами)' })
+  @ApiOperation({
+    summary: 'Получить группу по ID (с участниками и кураторами)',
+  })
   @ApiResponse({ status: 200, type: ReadGroupDetailDto })
   @UseGuards(JwtAuthGuard)
   @Get(':id')
-  async getById(@Param('id', ParseUUIDPipe) id: string): Promise<ReadGroupDetailDto> {
+  async getById(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<ReadGroupDetailDto> {
     const group = await this.groupsService.getGroupById(id);
     return ReadGroupDetailDto.fromEntity(group);
   }

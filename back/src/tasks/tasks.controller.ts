@@ -1,8 +1,20 @@
 import {
-  Body, Controller, Delete, Get, Param,
-  ParseUUIDPipe, Patch, Post, UseGuards,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { UserRole } from '../../generated/prisma/client';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
@@ -11,6 +23,8 @@ import { ReadTaskDto } from './dto/read-task.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { TokenPayload } from '../auth/interfaces/token-payload.interface';
 
 @ApiTags('Задания')
 @ApiBearerAuth()
@@ -28,21 +42,29 @@ export class TasksController {
     return ReadTaskDto.fromEntity(task, this.tasksService.getTaskFileUrl(task));
   }
 
-  @ApiOperation({ summary: 'Получить все задания' })
+  @ApiOperation({
+    summary:
+      'Получить задания (student — только активные, admin/adapter — включая просроченные)',
+  })
   @ApiResponse({ status: 200, type: [ReadTaskDto] })
   @UseGuards(JwtAuthGuard)
   @Get()
-  async getAll(): Promise<ReadTaskDto[]> {
-    const tasks = await this.tasksService.getAllTasks();
-    return tasks.map((t) => ReadTaskDto.fromEntity(t, this.tasksService.getTaskFileUrl(t)));
+  async getAll(@CurrentUser() user: TokenPayload): Promise<ReadTaskDto[]> {
+    const tasks = await this.tasksService.getAllTasks(user);
+    return tasks.map((t) =>
+      ReadTaskDto.fromEntity(t, this.tasksService.getTaskFileUrl(t)),
+    );
   }
 
   @ApiOperation({ summary: 'Получить задание по ID' })
   @ApiResponse({ status: 200, type: ReadTaskDto })
   @UseGuards(JwtAuthGuard)
   @Get(':id')
-  async getById(@Param('id', ParseUUIDPipe) id: string): Promise<ReadTaskDto> {
-    const task = await this.tasksService.getTaskById(id);
+  async getById(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: TokenPayload,
+  ): Promise<ReadTaskDto> {
+    const task = await this.tasksService.getTaskById(id, user);
     return ReadTaskDto.fromEntity(task, this.tasksService.getTaskFileUrl(task));
   }
 
@@ -59,12 +81,14 @@ export class TasksController {
     return ReadTaskDto.fromEntity(task, this.tasksService.getTaskFileUrl(task));
   }
 
-  @ApiOperation({ summary: 'Удалить задание (admin)' })
+  @ApiOperation({
+    summary: 'Архивировать задание (admin). Сабмиты и баллы сохраняются',
+  })
   @ApiResponse({ status: 200 })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.admin)
   @Delete(':id')
-  async delete(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
-    await this.tasksService.deleteTask(id);
+  async archive(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
+    await this.tasksService.archiveTask(id);
   }
 }

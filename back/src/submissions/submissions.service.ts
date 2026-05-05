@@ -1,45 +1,79 @@
 import { Injectable } from '@nestjs/common';
-import { SubmissionsRepository, SubmissionWithRelations } from './submissions.repository';
+import {
+  SubmissionsRepository,
+  SubmissionWithRelations,
+} from './submissions.repository';
 import { TasksService } from '../tasks/tasks.service';
+import { FilesService } from '../files/files.service';
 import { EntityNotFoundException } from '../common/exceptions/not-found.exception';
 import { EntityAlreadyExistsException } from '../common/exceptions/conflict.exception';
 import { DomainValidationException } from '../common/exceptions/validation.exception';
 import { ForbiddenException } from '../common/exceptions/forbidden.exception';
-import { SubmissionStatus, UserRole } from '../../generated/prisma/client';
+import {
+  FileType,
+  SubmissionStatus,
+  UserRole,
+} from '../../generated/prisma/client';
 import { TokenPayload } from '../auth/interfaces/token-payload.interface';
 import { S3Service } from '../s3/s3.service';
+import { TaskWithFile } from '../tasks/tasks.repository';
 
 @Injectable()
 export class SubmissionsService {
   constructor(
     private readonly submissionsRepository: SubmissionsRepository,
     private readonly tasksService: TasksService,
+    private readonly filesService: FilesService,
     private readonly s3Service: S3Service,
   ) {}
 
   async createSubmission(
     taskId: string,
     user: TokenPayload,
-    submissionFileId?: string,
+    submissionFileId: string,
   ): Promise<SubmissionWithRelations> {
     if (user.role === UserRole.adapter) {
       const isMember = await this.submissionsRepository.isGroupMember(user.id);
       if (!isMember) {
-        throw new ForbiddenException('Куратор может сдавать задания только если является участником группы');
+        throw new ForbiddenException(
+          'Куратор может сдавать задания только если является участником группы',
+        );
       }
     }
 
-    await this.tasksService.getTaskById(taskId);
+    const task = await this.tasksService.getTaskByIdRaw(taskId);
+    this.assertTaskAcceptsSubmissions(task);
 
-    const existing = await this.submissionsRepository.findExisting(taskId, user.id);
+    const existing = await this.submissionsRepository.findExisting(
+      taskId,
+      user.id,
+    );
     if (existing) {
-      throw new EntityAlreadyExistsException('TaskSubmission', 'taskId+studentId', taskId);
+      throw new EntityAlreadyExistsException(
+        'TaskSubmission',
+        'taskId+studentId',
+        taskId,
+      );
+    }
+
+    await this.filesService.assertOwnedAndType(
+      submissionFileId,
+      user.id,
+      FileType.submission,
+    );
+
+    const isFileTaken =
+      await this.submissionsRepository.isSubmissionFileTaken(submissionFileId);
+    if (isFileTaken) {
+      throw new DomainValidationException('Файл уже привязан к другой сдаче');
     }
 
     return this.submissionsRepository.create(taskId, user.id, submissionFileId);
   }
 
-  async getMySubmissions(studentId: string): Promise<SubmissionWithRelations[]> {
+  async getMySubmissions(
+    studentId: string,
+  ): Promise<SubmissionWithRelations[]> {
     return this.submissionsRepository.findByStudentId(studentId);
   }
 
@@ -47,15 +81,19 @@ export class SubmissionsService {
     taskId: string,
     user: TokenPayload,
   ): Promise<SubmissionWithRelations[]> {
-    await this.tasksService.getTaskById(taskId);
+    await this.tasksService.getTaskByIdRaw(taskId);
 
     if (user.role === UserRole.admin) {
       return this.submissionsRepository.findByTaskId(taskId);
     }
 
     if (user.role === UserRole.adapter) {
-      const studentIds = await this.submissionsRepository.getStudentIdsForAdapter(user.id);
-      return this.submissionsRepository.findByTaskIdAndStudentIds(taskId, studentIds);
+      const studentIds =
+        await this.submissionsRepository.getStudentIdsForAdapter(user.id);
+      return this.submissionsRepository.findByTaskIdAndStudentIds(
+        taskId,
+        studentIds,
+      );
     }
 
     throw new ForbiddenException('Нет доступа');
@@ -99,20 +137,6 @@ export class SubmissionsService {
     );
   }
 
-  private async assertCanViewSubmission(
-    submission: SubmissionWithRelations,
-    user: TokenPayload,
-  ): Promise<void> {
-    if (user.role === UserRole.admin) return;
-
-    if (user.role === UserRole.adapter) {
-      const studentIds = await this.submissionsRepository.getStudentIdsForAdapter(user.id);
-      if (studentIds.includes(submission.studentId)) return;
-    }
-
-    throw new ForbiddenException('Нет доступа к данной сдаче');
-  }
-
   getFileUrls(submission: SubmissionWithRelations) {
     return {
       submissionFileUrl: submission.submissionFile
@@ -127,6 +151,34 @@ export class SubmissionsService {
     };
   }
 
+  /**
+   * Проверяет, что задание открыто для приёма сдач:
+   * не архивировано и не просрочено.
+   */
+  private assertTaskAcceptsSubmissions(task: TaskWithFile): void {
+    if (task.archivedAt) {
+      throw new DomainValidationException('Задание архивировано');
+    }
+    if (task.expiresAt && task.expiresAt < new Date()) {
+      throw new DomainValidationException('Срок сдачи задания истёк');
+    }
+  }
+
+  private async assertCanViewSubmission(
+    submission: SubmissionWithRelations,
+    user: TokenPayload,
+  ): Promise<void> {
+    if (user.role === UserRole.admin) return;
+
+    if (user.role === UserRole.adapter) {
+      const studentIds =
+        await this.submissionsRepository.getStudentIdsForAdapter(user.id);
+      if (studentIds.includes(submission.studentId)) return;
+    }
+
+    throw new ForbiddenException('Нет доступа к данной сдаче');
+  }
+
   private async assertCanManageSubmission(
     submission: SubmissionWithRelations,
     user: TokenPayload,
@@ -134,7 +186,8 @@ export class SubmissionsService {
     if (user.role === UserRole.admin) return;
 
     if (user.role === UserRole.adapter) {
-      const studentIds = await this.submissionsRepository.getStudentIdsForAdapter(user.id);
+      const studentIds =
+        await this.submissionsRepository.getStudentIdsForAdapter(user.id);
       if (studentIds.includes(submission.studentId)) return;
       throw new ForbiddenException('Студент не в вашей группе');
     }

@@ -1,5 +1,15 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength, Min } from 'class-validator';
+import {
+  IsEnum,
+  IsInt,
+  IsISO8601,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+  Min,
+} from 'class-validator';
 import { TaskType } from '../../../generated/prisma/client';
 
 export class CreateTaskDto {
@@ -9,12 +19,19 @@ export class CreateTaskDto {
   @MaxLength(200, { message: 'Не более 200 символов' })
   readonly title: string;
 
-  @ApiProperty({ example: 'Описание задания...', description: 'Описание задания' })
+  @ApiProperty({
+    example: 'Описание задания...',
+    description: 'Описание задания',
+  })
   @IsNotEmpty({ message: 'Описание обязательно' })
   @IsString({ message: 'Должно быть строкой' })
   readonly description: string;
 
-  @ApiPropertyOptional({ enum: TaskType, example: 'general', description: 'Тип задания' })
+  @ApiPropertyOptional({
+    enum: TaskType,
+    example: 'general',
+    description: 'Тип задания',
+  })
   @IsOptional()
   @IsEnum(TaskType, { message: 'Некорректный тип задания' })
   readonly type?: TaskType;
@@ -29,4 +46,13 @@ export class CreateTaskDto {
   @IsOptional()
   @IsUUID('4', { message: 'Должен быть UUID' })
   readonly taskFileId?: string;
+
+  @ApiPropertyOptional({
+    example: '2026-12-31T23:59:59Z',
+    description:
+      'Срок действия задания (ISO 8601). Если не указан — задание бессрочное',
+  })
+  @IsOptional()
+  @IsISO8601({}, { message: 'expiresAt должен быть ISO 8601 датой' })
+  readonly expiresAt?: string;
 }

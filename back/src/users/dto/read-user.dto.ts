@@ -8,10 +8,18 @@ export class ReadUserDto {
   @ApiProperty({ example: 'user@mail.ru', description: 'Почтовый ящик' })
   readonly email: string;
 
-  @ApiProperty({ enum: UserRole, example: 'student', description: 'Роль пользователя' })
+  @ApiProperty({
+    enum: UserRole,
+    example: 'student',
+    description: 'Роль пользователя',
+  })
   readonly role: UserRole;
 
-  @ApiProperty({ enum: UserStatus, example: 'active', description: 'Статус пользователя' })
+  @ApiProperty({
+    enum: UserStatus,
+    example: 'active',
+    description: 'Статус пользователя',
+  })
   readonly status: UserStatus;
 
   @ApiProperty({ example: 'Иван', description: 'Имя' })
@@ -23,7 +31,11 @@ export class ReadUserDto {
   @ApiProperty({ example: 0, description: 'Суммарный рейтинг' })
   readonly ratingTotal: number;
 
-  @ApiPropertyOptional({ example: 'https://storage.yandexcloud.net/...', description: 'URL аватара', nullable: true })
+  @ApiPropertyOptional({
+    example: 'https://storage.yandexcloud.net/...',
+    description: 'URL аватара',
+    nullable: true,
+  })
   readonly avatarUrl: string | null;
 
   @ApiProperty({ description: 'Дата создания' })

@@ -4,7 +4,9 @@ import { Prisma } from '../../generated/prisma/client';
 
 const WITH_AVATAR = { avatarFile: true } satisfies Prisma.UserInclude;
 
-export type UserWithAvatar = Prisma.UserGetPayload<{ include: typeof WITH_AVATAR }>;
+export type UserWithAvatar = Prisma.UserGetPayload<{
+  include: typeof WITH_AVATAR;
+}>;
 
 @Injectable()
 export class UsersRepository {
@@ -23,10 +25,20 @@ export class UsersRepository {
   }
 
   async findByEmail(email: string): Promise<UserWithAvatar | null> {
-    return this.prisma.user.findUnique({ where: { email }, include: WITH_AVATAR });
+    return this.prisma.user.findUnique({
+      where: { email },
+      include: WITH_AVATAR,
+    });
   }
 
-  async update(id: string, data: Prisma.UserUpdateInput): Promise<UserWithAvatar> {
-    return this.prisma.user.update({ where: { id }, data, include: WITH_AVATAR });
+  async update(
+    id: string,
+    data: Prisma.UserUpdateInput,
+  ): Promise<UserWithAvatar> {
+    return this.prisma.user.update({
+      where: { id },
+      data,
+      include: WITH_AVATAR,
+    });
   }
 }

@@ -1,8 +1,19 @@
 import {
-  Body, Controller, Get, Param, ParseUUIDPipe,
-  Patch, Post, UseGuards,
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { UserRole } from '../../generated/prisma/client';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -11,8 +22,6 @@ import { ChangeRoleDto } from './dto/change-role.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import type { TokenPayload } from '../auth/interfaces/token-payload.interface';
 
 @ApiTags('Пользователи')
 @ApiBearerAuth()
@@ -37,16 +46,9 @@ export class UsersController {
   @Get()
   async getAll(): Promise<ReadUserDto[]> {
     const users = await this.usersService.getAllUsers();
-    return users.map((u) => ReadUserDto.fromEntity(u, this.usersService.getAvatarUrl(u)));
-  }
-
-  @ApiOperation({ summary: 'Получить текущего пользователя' })
-  @ApiResponse({ status: 200, type: ReadUserDto })
-  @UseGuards(JwtAuthGuard)
-  @Get('me')
-  async getMe(@CurrentUser() currentUser: TokenPayload): Promise<ReadUserDto> {
-    const user = await this.usersService.getUserById(currentUser.id);
-    return ReadUserDto.fromEntity(user, this.usersService.getAvatarUrl(user));
+    return users.map((u) =>
+      ReadUserDto.fromEntity(u, this.usersService.getAvatarUrl(u)),
+    );
   }
 
   @ApiOperation({ summary: 'Получить пользователя по ID' })
@@ -55,18 +57,6 @@ export class UsersController {
   @Get(':id')
   async getById(@Param('id', ParseUUIDPipe) id: string): Promise<ReadUserDto> {
     const user = await this.usersService.getUserById(id);
-    return ReadUserDto.fromEntity(user, this.usersService.getAvatarUrl(user));
-  }
-
-  @ApiOperation({ summary: 'Установить аватар текущему пользователю' })
-  @ApiResponse({ status: 200, type: ReadUserDto })
-  @UseGuards(JwtAuthGuard)
-  @Patch('me/avatar')
-  async setAvatar(
-    @Body('fileId', ParseUUIDPipe) fileId: string,
-    @CurrentUser() currentUser: TokenPayload,
-  ): Promise<ReadUserDto> {
-    const user = await this.usersService.setAvatar(currentUser.id, fileId);
     return ReadUserDto.fromEntity(user, this.usersService.getAvatarUrl(user));
   }
 

@@ -1,9 +1,25 @@
 import {
-  Controller, Delete, Get, Param, ParseUUIDPipe,
-  Post, Query, UploadedFile, UseGuards, UseInterceptors,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { FileType, UserRole } from '../../generated/prisma/client';
 import { FilesService } from './files.service';
 import { ReadFileDto } from './dto/read-file.dto';
@@ -66,6 +82,10 @@ export class FilesController {
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: TokenPayload,
   ): Promise<void> {
-    await this.filesService.deleteFile(id, user.id, user.role === UserRole.admin);
+    await this.filesService.deleteFile(
+      id,
+      user.id,
+      user.role === UserRole.admin,
+    );
   }
 }

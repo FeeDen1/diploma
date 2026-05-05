@@ -111,18 +111,22 @@ enum SubmissionStatus {
 }
 
 model Task {
-  id          String   @id @default(uuid()) @db.Uuid
-  title       String   @db.VarChar(200)
-  description String   @db.Text
-  type        TaskType @default(general)
+  id          String    @id @default(uuid()) @db.Uuid
+  title       String    @db.VarChar(200)
+  description String    @db.Text
+  type        TaskType  @default(general)
   points      Int
-  taskFileId  String?  @unique @map("task_file_id") @db.Uuid
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
-  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+  taskFileId  String?   @unique @map("task_file_id") @db.Uuid
+  expiresAt   DateTime? @map("expires_at") @db.Timestamptz()
+  archivedAt  DateTime? @map("archived_at") @db.Timestamptz()
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz()
 
   taskFile    File?            @relation("TaskFile", fields: [taskFileId], references: [id], onDelete: SetNull)
   submissions TaskSubmission[]
 
+  @@index([archivedAt])
+  @@index([expiresAt])
   @@map("tasks")
 }
 
@@ -131,13 +135,13 @@ model TaskSubmission {
   taskId           String           @map("task_id") @db.Uuid
   studentId        String           @map("student_id") @db.Uuid
   status           SubmissionStatus @default(pending)
-  submissionFileId String?          @unique @map("submission_file_id") @db.Uuid
+  submissionFileId String           @unique @map("submission_file_id") @db.Uuid
   createdAt        DateTime         @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt        DateTime         @updatedAt @map("updated_at") @db.Timestamptz()
 
-  task           Task  @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  student        User  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  submissionFile File? @relation("SubmissionFile", fields: [submissionFileId], references: [id], onDelete: SetNull)
+  task           Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  student        User @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  submissionFile File @relation("SubmissionFile", fields: [submissionFileId], references: [id], onDelete: Cascade)
 
   @@unique([taskId, studentId])
   @@map("task_submissions")

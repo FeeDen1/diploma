@@ -4,9 +4,10 @@ import { SubmissionsService } from './submissions.service';
 import { SubmissionsRepository } from './submissions.repository';
 import { SharedAuthModule } from '../auth/shared-auth.module';
 import { TasksModule } from '../tasks/tasks.module';
+import { FilesModule } from '../files/files.module';
 
 @Module({
-  imports: [SharedAuthModule, TasksModule],
+  imports: [SharedAuthModule, TasksModule, FilesModule],
   controllers: [SubmissionsController],
   providers: [SubmissionsService, SubmissionsRepository],
   exports: [SubmissionsService],

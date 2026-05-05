@@ -1,5 +1,5 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsUUID } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsNotEmpty, IsUUID } from 'class-validator';
 
 export class CreateSubmissionDto {
   @ApiProperty({ example: 'uuid', description: 'ID задания' })
@@ -7,8 +7,11 @@ export class CreateSubmissionDto {
   @IsUUID('4', { message: 'Должно быть UUID' })
   readonly taskId: string;
 
-  @ApiPropertyOptional({ example: 'uuid', description: 'ID файла сдачи' })
-  @IsOptional()
+  @ApiProperty({
+    example: 'uuid',
+    description: 'ID файла сдачи (обязательный)',
+  })
+  @IsNotEmpty({ message: 'Файл сдачи обязателен' })
   @IsUUID('4', { message: 'Должен быть UUID' })
-  readonly submissionFileId?: string;
+  readonly submissionFileId: string;
 }

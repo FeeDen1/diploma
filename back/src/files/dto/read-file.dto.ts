@@ -1,8 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { File, FileType, FileVisibility } from '../../../generated/prisma/client';
+import {
+  File,
+  FileType,
+  FileVisibility,
+} from '../../../generated/prisma/client';
 
 export class ReadFileDto {
-  @ApiProperty({ example: 'uuid', description: 'Уникальный идентификатор файла' })
+  @ApiProperty({
+    example: 'uuid',
+    description: 'Уникальный идентификатор файла',
+  })
   readonly id: string;
 
   @ApiProperty({ example: 'uuid', description: 'ID владельца файла' })
@@ -11,7 +18,11 @@ export class ReadFileDto {
   @ApiProperty({ enum: FileType, example: 'avatar', description: 'Тип файла' })
   readonly type: FileType;
 
-  @ApiProperty({ enum: FileVisibility, example: 'public', description: 'Видимость файла' })
+  @ApiProperty({
+    enum: FileVisibility,
+    example: 'public',
+    description: 'Видимость файла',
+  })
   readonly visibility: FileVisibility;
 
   @ApiProperty({ example: 'image/png', description: 'MIME-тип файла' })
@@ -20,7 +31,10 @@ export class ReadFileDto {
   @ApiProperty({ example: 102400, description: 'Размер файла в байтах' })
   readonly sizeBytes: number;
 
-  @ApiProperty({ example: 'https://storage.yandexcloud.net/pm-task/avatars/uuid.png', description: 'Публичная ссылка' })
+  @ApiProperty({
+    example: 'https://storage.yandexcloud.net/pm-task/avatars/uuid.png',
+    description: 'Публичная ссылка',
+  })
   readonly url: string;
 
   @ApiProperty({ description: 'Дата загрузки' })

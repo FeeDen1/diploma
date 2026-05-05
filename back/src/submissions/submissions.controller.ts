@@ -1,8 +1,21 @@
 import {
-  Body, Controller, Get, Param,
-  ParseUUIDPipe, Patch, Post, Query, UseGuards,
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { UserRole } from '../../generated/prisma/client';
 import { SubmissionsService } from './submissions.service';
 import { CreateSubmissionDto } from './dto/create-submission.dto';
@@ -20,7 +33,9 @@ import type { TokenPayload } from '../auth/interfaces/token-payload.interface';
 export class SubmissionsController {
   constructor(private readonly submissionsService: SubmissionsService) {}
 
-  @ApiOperation({ summary: 'Сдать задание (student / adapter-участник группы)' })
+  @ApiOperation({
+    summary: 'Сдать задание (student / adapter-участник группы)',
+  })
   @ApiResponse({ status: 201, type: ReadSubmissionDto })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.student, UserRole.adapter)
@@ -29,8 +44,15 @@ export class SubmissionsController {
     @Body() dto: CreateSubmissionDto,
     @CurrentUser() user: TokenPayload,
   ): Promise<ReadSubmissionDto> {
-    const submission = await this.submissionsService.createSubmission(dto.taskId, user, dto.submissionFileId);
-    return ReadSubmissionDto.fromEntity(submission, this.submissionsService.getFileUrls(submission));
+    const submission = await this.submissionsService.createSubmission(
+      dto.taskId,
+      user,
+      dto.submissionFileId,
+    );
+    return ReadSubmissionDto.fromEntity(
+      submission,
+      this.submissionsService.getFileUrls(submission),
+    );
   }
 
   @ApiOperation({ summary: 'Мои сдачи (student / adapter-участник группы)' })
@@ -40,10 +62,14 @@ export class SubmissionsController {
   @Get('my')
   async getMy(@CurrentUser() user: TokenPayload): Promise<ReadSubmissionDto[]> {
     const submissions = await this.submissionsService.getMySubmissions(user.id);
-    return submissions.map((s) => ReadSubmissionDto.fromEntity(s, this.submissionsService.getFileUrls(s)));
+    return submissions.map((s) =>
+      ReadSubmissionDto.fromEntity(s, this.submissionsService.getFileUrls(s)),
+    );
   }
 
-  @ApiOperation({ summary: 'Сдачи по заданию (admin: все, adapter: свои группы)' })
+  @ApiOperation({
+    summary: 'Сдачи по заданию (admin: все, adapter: свои группы)',
+  })
   @ApiResponse({ status: 200, type: [ReadSubmissionDto] })
   @ApiQuery({ name: 'taskId', type: String, description: 'ID задания' })
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -53,8 +79,13 @@ export class SubmissionsController {
     @Query('taskId', ParseUUIDPipe) taskId: string,
     @CurrentUser() user: TokenPayload,
   ): Promise<ReadSubmissionDto[]> {
-    const submissions = await this.submissionsService.getSubmissionsByTaskId(taskId, user);
-    return submissions.map((s) => ReadSubmissionDto.fromEntity(s, this.submissionsService.getFileUrls(s)));
+    const submissions = await this.submissionsService.getSubmissionsByTaskId(
+      taskId,
+      user,
+    );
+    return submissions.map((s) =>
+      ReadSubmissionDto.fromEntity(s, this.submissionsService.getFileUrls(s)),
+    );
   }
 
   @ApiOperation({ summary: 'Сдача по ID (admin/adapter)' })
@@ -66,8 +97,14 @@ export class SubmissionsController {
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: TokenPayload,
   ): Promise<ReadSubmissionDto> {
-    const submission = await this.submissionsService.getSubmissionById(id, user);
-    return ReadSubmissionDto.fromEntity(submission, this.submissionsService.getFileUrls(submission));
+    const submission = await this.submissionsService.getSubmissionById(
+      id,
+      user,
+    );
+    return ReadSubmissionDto.fromEntity(
+      submission,
+      this.submissionsService.getFileUrls(submission),
+    );
   }
 
   @ApiOperation({ summary: 'Изменить статус сдачи (admin/adapter)' })
@@ -80,7 +117,14 @@ export class SubmissionsController {
     @Body() dto: ChangeStatusDto,
     @CurrentUser() user: TokenPayload,
   ): Promise<ReadSubmissionDto> {
-    const submission = await this.submissionsService.changeStatus(id, dto.status, user);
-    return ReadSubmissionDto.fromEntity(submission, this.submissionsService.getFileUrls(submission));
+    const submission = await this.submissionsService.changeStatus(
+      id,
+      dto.status,
+      user,
+    );
+    return ReadSubmissionDto.fromEntity(
+      submission,
+      this.submissionsService.getFileUrls(submission),
+    );
   }
 }

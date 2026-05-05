@@ -1,6 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma';
-import { Group, GroupMember, GroupAdapter, User, Prisma } from '../../generated/prisma/client';
+import {
+  Group,
+  GroupMember,
+  GroupAdapter,
+  User,
+  Prisma,
+} from '../../generated/prisma/client';
 
 export type GroupWithRelations = Group & {
   members: (GroupMember & { user: User })[];
@@ -37,7 +43,10 @@ export class GroupsRepository {
     return this.prisma.group.delete({ where: { id } });
   }
 
-  async findMember(groupId: string, userId: string): Promise<GroupMember | null> {
+  async findMember(
+    groupId: string,
+    userId: string,
+  ): Promise<GroupMember | null> {
     return this.prisma.groupMember.findUnique({
       where: { groupId_userId: { groupId, userId } },
     });
@@ -55,7 +64,10 @@ export class GroupsRepository {
     });
   }
 
-  async findAdapter(groupId: string, userId: string): Promise<GroupAdapter | null> {
+  async findAdapter(
+    groupId: string,
+    userId: string,
+  ): Promise<GroupAdapter | null> {
     return this.prisma.groupAdapter.findUnique({
       where: { groupId_userId: { groupId, userId } },
     });

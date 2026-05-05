@@ -53,7 +53,9 @@ export class UsersService {
 
   async setAvatar(userId: string, fileId: string): Promise<UserWithAvatar> {
     await this.getUserById(userId);
-    return this.usersRepository.update(userId, { avatarFile: { connect: { id: fileId } } });
+    return this.usersRepository.update(userId, {
+      avatarFile: { connect: { id: fileId } },
+    });
   }
 
   getAvatarUrl(user: UserWithAvatar): string | null {

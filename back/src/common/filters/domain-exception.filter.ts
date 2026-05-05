@@ -1,4 +1,9 @@
-import { ExceptionFilter, Catch, ArgumentsHost, HttpStatus } from '@nestjs/common';
+import {
+  ExceptionFilter,
+  Catch,
+  ArgumentsHost,
+  HttpStatus,
+} from '@nestjs/common';
 import { Response } from 'express';
 import { DomainException } from '../exceptions/domain.exception';
 import { EntityNotFoundException } from '../exceptions/not-found.exception';
@@ -7,7 +12,6 @@ import { DomainValidationException } from '../exceptions/validation.exception';
 import { ValidationFailedException } from '../exceptions/validation-failed.exception';
 import { UnauthorizedException } from '../exceptions/unauthorized.exception';
 import { ForbiddenException } from '../exceptions/forbidden.exception';
-
 
 @Catch(DomainException)
 export class DomainExceptionFilter implements ExceptionFilter {
