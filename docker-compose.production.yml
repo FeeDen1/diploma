@@ -1,0 +1,69 @@
+# =============================================================================
+# Production stack PM-Task: backend + Postgres.
+#
+# Caddy (reverse proxy + TLS) добавим на этапе 4 — тогда пробросим 80/443
+# наружу и спрячем backend в internal-network.
+#
+# Запуск:
+#   docker compose --env-file .env.production -f docker-compose.production.yml up -d
+#
+# Остановка:
+#   docker compose --env-file .env.production -f docker-compose.production.yml down
+#
+# Просмотр логов бэка:
+#   docker compose --env-file .env.production -f docker-compose.production.yml logs -f backend
+# =============================================================================
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      # Данные БД переживают пересоздание контейнера. Volume именованный,
+      # путь на хосте управляется Docker'ом (обычно /var/lib/docker/volumes/...).
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      # pg_isready возвращает 0, как только Postgres принимает подключения.
+      # Бэкенд через depends_on.condition: service_healthy ждёт этот момент.
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      # На M1/M2 Mac первая инициализация БД занимает 15-25 секунд —
+      # за это время healthcheck не считается failed.
+      start_period: 30s
+    # Локально Postgres наружу публиковать НЕ нужно — бэкенд ходит через
+    # docker-сеть. Если хочешь подключиться извне для отладки — раскомментируй.
+    # ports:
+    #   - '127.0.0.1:5432:5432'
+
+  backend:
+    build:
+      context: ./back
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # env_file пробрасывает все переменные из .env.production внутрь контейнера.
+    # Если NODE_ENV не задан в файле — задаём здесь, как страховка.
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
+      # DATABASE_URL внутри docker-сети ссылается на сервис `postgres`,
+      # а не на localhost. Перетираем, что бы там ни было в .env.production.
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    # Биндим порт ТОЛЬКО на 127.0.0.1, чтобы наружу из VPS он не торчал —
+    # Docker по умолчанию обходит ufw и публикует порты на 0.0.0.0, а нам
+    # на проде наружу должен светить только Caddy (этап 4). Smoke-test
+    # делаем через ssh + curl localhost.
+    ports:
+      - '127.0.0.1:${BACKEND_HOST_PORT:-5001}:5001'
+
+volumes:
+  postgres_data:

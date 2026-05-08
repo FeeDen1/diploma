@@ -1,0 +1,35 @@
+# Не тянем в build-context лишнее — это и быстрее, и безопаснее.
+
+# Локальные артефакты
+node_modules
+dist
+generated
+coverage
+.nyc_output
+
+# Локальные конфиги/секреты
+.env
+.env.*
+!.env.example
+
+# IDE / OS
+.idea
+.vscode
+.DS_Store
+
+# Git и CI
+.git
+.gitignore
+.github
+
+# Тесты — в проде не нужны (если tests случайно попадут в COPY,
+# то они не нужны в образе)
+*.spec.ts
+test
+
+# Документация
+README.md
+*.md
+
+# Бэкапы локальных дампов
+backups
