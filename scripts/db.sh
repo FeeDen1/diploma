@@ -102,15 +102,17 @@ cmd_make_admin() {
     [[ -n "$email" ]] || fail "usage: $0 make-admin <email>"
 
     step "Делаю $email админом"
+    # Таблицы и поля в БД — snake_case (Prisma @@map / @map),
+    # отсюда users, created_at, first_name и т.д.
     psql_stdin <<SQL
-UPDATE "User" SET role = 'admin' WHERE email = '$email' RETURNING id, email, role;
+UPDATE users SET role = 'admin' WHERE email = '$email' RETURNING id, email, role;
 SQL
 }
 
 cmd_list_users() {
     step "Список юзеров"
     psql_stdin <<'SQL'
-SELECT email, role, "createdAt" FROM "User" ORDER BY "createdAt" DESC;
+SELECT email, role, status, created_at FROM users ORDER BY created_at DESC;
 SQL
 }
 
