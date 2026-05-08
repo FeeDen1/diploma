@@ -1,0 +1,63 @@
+# =============================================================================
+# Caddyfile — реверс-прокси для PM-Task API.
+#
+# Caddy автоматически получит и будет обновлять TLS-сертификат от
+# Let's Encrypt для api.spbu-pmi.ru. Никаких certbot, cron — всё внутри.
+#
+# Для проверки конфига локально (на сервере):
+#   docker compose --env-file .env.production -f docker-compose.production.yml \
+#     exec caddy caddy validate --config /etc/caddy/Caddyfile
+# =============================================================================
+
+# Глобальные настройки
+{
+	# Email для Let's Encrypt (на него LE шлёт уведомления о проблемах с cert).
+	email Pm-Task@yandex.ru
+
+	# Структурированные логи в JSON для всего Caddy. Ниже в site-block —
+	# отдельный access-log для нашего домена.
+	log {
+		output stdout
+		format json
+		level INFO
+	}
+}
+
+# =============================================================================
+# api.spbu-pmi.ru → backend:5001
+# =============================================================================
+api.spbu-pmi.ru {
+	# Прокси на бэк по docker-сети. backend:5001 — внутренний DNS Docker'а.
+	reverse_proxy backend:5001 {
+		# Передаём бэку реальный IP клиента и оригинальный Host.
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+		header_up Host {host}
+	}
+
+	# Сжатие ответов на лету — экономит трафик мобилки.
+	encode zstd gzip
+
+	# Security-заголовки: HSTS на год, запрет встраивания в iframe и т.п.
+	# helmet в бэке это тоже умеет, но Caddy ставит их раньше — на случай
+	# если бэк упал и отвечает 502, заголовки всё равно есть.
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		# Убираем Server-заголовок, чтоб не палить версию Caddy
+		-Server
+	}
+
+	# Access-лог в файл (volume), JSON, ротация средствами Caddy.
+	log {
+		output file /var/log/caddy/access.log {
+			roll_size 100MiB
+			roll_keep 7
+			roll_keep_for 168h
+		}
+		format json
+	}
+}

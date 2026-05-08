@@ -1,8 +1,5 @@
 # =============================================================================
-# Production stack PM-Task: backend + Postgres.
-#
-# Caddy (reverse proxy + TLS) добавим на этапе 4 — тогда пробросим 80/443
-# наружу и спрячем backend в internal-network.
+# Production stack PM-Task: Caddy (TLS + reverse proxy) + backend + Postgres.
 #
 # Запуск:
 #   docker compose --env-file .env.production -f docker-compose.production.yml up -d
@@ -51,7 +48,6 @@ services:
       postgres:
         condition: service_healthy
     # env_file пробрасывает все переменные из .env.production внутрь контейнера.
-    # Если NODE_ENV не задан в файле — задаём здесь, как страховка.
     env_file:
       - .env.production
     environment:
@@ -59,12 +55,40 @@ services:
       # DATABASE_URL внутри docker-сети ссылается на сервис `postgres`,
       # а не на localhost. Перетираем, что бы там ни было в .env.production.
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-    # Биндим порт ТОЛЬКО на 127.0.0.1, чтобы наружу из VPS он не торчал —
-    # Docker по умолчанию обходит ufw и публикует порты на 0.0.0.0, а нам
-    # на проде наружу должен светить только Caddy (этап 4). Smoke-test
-    # делаем через ssh + curl localhost.
+    # Loopback-публикация для SSH-туннеля и локального дебага.
+    # Наружу 5001 НЕ светит — снаружи только Caddy на 80/443.
     ports:
       - '127.0.0.1:${BACKEND_HOST_PORT:-5001}:5001'
 
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - backend
+    # 80 и 443 наружу: единственные публичные порты VPS.
+    # ufw на хосте пускает их (см. bootstrap-server.sh).
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp' # HTTP/3 (QUIC)
+    volumes:
+      # Конфиг (read-only)
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # TLS-сертификаты Let's Encrypt — Caddy их сам кладёт сюда и обновляет
+      - caddy_data:/data
+      # Внутренний state (Caddy admin API, кеш)
+      - caddy_config:/config
+      # Файлы access-логов (видны на хосте через docker volume inspect)
+      - caddy_logs:/var/log/caddy
+    healthcheck:
+      test: ['CMD', 'wget', '--quiet', '--tries=1', '--spider', 'http://localhost:2019/']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
 volumes:
   postgres_data:
+  caddy_data:
+  caddy_config:
+  caddy_logs:
