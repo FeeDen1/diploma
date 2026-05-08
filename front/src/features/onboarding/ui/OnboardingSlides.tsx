@@ -1,18 +1,22 @@
-import React, { useState, useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import {
-  View,
-  Text,
-  FlatList,
   Dimensions,
+  FlatList,
+  Text,
+  View,
   type ListRenderItem,
-  type NativeSyntheticEvent,
   type NativeScrollEvent,
+  type NativeSyntheticEvent,
 } from 'react-native';
 import { router } from 'expo-router';
-import { Icon } from '../../../shared/ui/Icon';
 import { Button } from '../../../shared/ui/Button';
+import {
+  PodiumIcon,
+  SchoolIcon,
+  TrophyIcon,
+  type IconProps,
+} from '../../../shared/ui/icons';
 import { storage } from '../../../shared/lib/storage';
-import { useAuthStore } from '../../../entities/user';
 
 const { width } = Dimensions.get('window');
 
@@ -20,7 +24,7 @@ interface Slide {
   id: string;
   title: string;
   description: string;
-  icon: string;
+  Icon: React.ComponentType<IconProps>;
 }
 
 const slides: Slide[] = [
@@ -29,59 +33,55 @@ const slides: Slide[] = [
     title: 'Добро пожаловать!',
     description:
       'Приложение для первокурсников факультета ПМ-ПУ СПбГУ. Выполняй задания, зарабатывай баллы и соревнуйся с однокурсниками!',
-    icon: 'school-outline',
+    Icon: SchoolIcon,
   },
   {
     id: '2',
     title: 'Достижения',
     description:
       'Выполняй разнообразные задания — от учебных до спортивных. Прикрепляй фото в качестве подтверждения и получай баллы.',
-    icon: 'trophy-outline',
+    Icon: TrophyIcon,
   },
   {
     id: '3',
     title: 'Рейтинг',
     description:
       'Следи за своим местом в рейтинге. Обменивай заработанные баллы на мерч факультета!',
-    icon: 'podium-outline',
+    Icon: PodiumIcon,
   },
-
 ];
 
-export function OnboardingSlides() {
+export function OnboardingSlides(): React.ReactElement {
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList<Slide>>(null);
 
-  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>): void => {
     const index = Math.round(event.nativeEvent.contentOffset.x / width);
     setCurrentIndex(index);
   };
 
-  const handleNext = async () => {
+  const finishOnboarding = async (): Promise<void> => {
+    await storage.setOnboardingCompleted();
+    router.replace('/(auth)/login');
+  };
+
+  const handleNext = (): void => {
     if (currentIndex < slides.length - 1) {
       flatListRef.current?.scrollToIndex({ index: currentIndex + 1 });
     } else {
-      await storage.setOnboardingCompleted();
-      useAuthStore.getState().setOnboardingCompleted(true);
-      router.replace('/(auth)/login');
+      void finishOnboarding();
     }
-  };
-
-  const handleSkip = async () => {
-    await storage.setOnboardingCompleted();
-    useAuthStore.getState().setOnboardingCompleted(true);
-    router.replace('/(auth)/login');
   };
 
   const renderSlide: ListRenderItem<Slide> = ({ item }) => (
     <View className="items-center justify-center px-8" style={{ width }}>
-      <View className="w-32 h-32 rounded-full bg-primary-50 items-center justify-center mb-8">
-        <Icon name={item.icon} size={64} color="#4F46E5" />
+      <View className="w-32 h-32 rounded-full bg-primary-soft items-center justify-center mb-8">
+        <item.Icon size={64} color="rgb(99 102 241)" />
       </View>
-      <Text className="text-2xl font-bold text-textPrimary text-center mb-4">
+      <Text className="text-2xl font-bold text-text-primary text-center mb-4">
         {item.title}
       </Text>
-      <Text className="text-base text-textSecondary text-center leading-6">
+      <Text className="text-base text-text-secondary text-center leading-6">
         {item.description}
       </Text>
     </View>
@@ -103,19 +103,17 @@ export function OnboardingSlides() {
         />
       </View>
 
-      {/* Dots */}
       <View className="flex-row justify-center mb-8">
-        {slides.map((_, index) => (
+        {slides.map((slide, index) => (
           <View
-            key={index}
+            key={slide.id}
             className={`w-2.5 h-2.5 rounded-full mx-1 ${
-              index === currentIndex ? 'bg-primary-600' : 'bg-gray-300'
+              index === currentIndex ? 'bg-primary' : 'bg-border'
             }`}
           />
         ))}
       </View>
 
-      {/* Buttons */}
       <View className="px-6 pb-12">
         <Button
           title={currentIndex === slides.length - 1 ? 'Начать' : 'Далее'}
@@ -126,7 +124,7 @@ export function OnboardingSlides() {
           <Button
             title="Пропустить"
             variant="ghost"
-            onPress={handleSkip}
+            onPress={() => void finishOnboarding()}
             fullWidth
             className="mt-2"
           />

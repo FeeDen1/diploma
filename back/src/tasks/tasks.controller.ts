@@ -7,6 +7,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -20,6 +21,8 @@ import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { ReadTaskDto } from './dto/read-task.dto';
+import { ListTasksQueryDto } from './dto/list-tasks-query.dto';
+import { PaginatedTasksDto } from './dto/paginated-tasks.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -44,16 +47,23 @@ export class TasksController {
 
   @ApiOperation({
     summary:
-      'Получить задания (student — только активные, admin/adapter — включая просроченные)',
+      'Получить задания постранично (фильтр category, sort, limit, offset)',
   })
-  @ApiResponse({ status: 200, type: [ReadTaskDto] })
+  @ApiResponse({ status: 200, type: PaginatedTasksDto })
   @UseGuards(JwtAuthGuard)
   @Get()
-  async getAll(@CurrentUser() user: TokenPayload): Promise<ReadTaskDto[]> {
-    const tasks = await this.tasksService.getAllTasks(user);
-    return tasks.map((t) =>
-      ReadTaskDto.fromEntity(t, this.tasksService.getTaskFileUrl(t)),
+  async getAll(
+    @CurrentUser() user: TokenPayload,
+    @Query() query: ListTasksQueryDto,
+  ): Promise<PaginatedTasksDto> {
+    const { items, total, limit, offset } = await this.tasksService.listTasks(
+      user,
+      query,
     );
+    const dtos = items.map((task) =>
+      ReadTaskDto.fromEntity(task, this.tasksService.getTaskFileUrl(task)),
+    );
+    return PaginatedTasksDto.create(dtos, total, limit, offset);
   }
 
   @ApiOperation({ summary: 'Получить задание по ID' })
@@ -90,5 +100,18 @@ export class TasksController {
   @Delete(':id')
   async archive(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
     await this.tasksService.archiveTask(id);
+  }
+
+  @ApiOperation({
+    summary:
+      'Восстановить архивное задание (admin). Если срок истёк — он снимается',
+  })
+  @ApiResponse({ status: 200, type: ReadTaskDto })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.admin)
+  @Patch(':id/restore')
+  async restore(@Param('id', ParseUUIDPipe) id: string): Promise<ReadTaskDto> {
+    const task = await this.tasksService.unarchiveTask(id);
+    return ReadTaskDto.fromEntity(task, this.tasksService.getTaskFileUrl(task));
   }
 }

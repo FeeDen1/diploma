@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma';
-import { Prisma } from '../../generated/prisma/client';
+import { Group, Prisma } from '../../generated/prisma/client';
 
 const WITH_AVATAR = { avatarFile: true } satisfies Prisma.UserInclude;
 
@@ -40,5 +40,23 @@ export class UsersRepository {
       data,
       include: WITH_AVATAR,
     });
+  }
+
+  async findMembershipGroups(userId: string): Promise<Group[]> {
+    const memberships = await this.prisma.groupMember.findMany({
+      where: { userId },
+      include: { group: true },
+      orderBy: { joinedAt: 'desc' },
+    });
+    return memberships.map((membership) => membership.group);
+  }
+
+  async findCuratedGroups(userId: string): Promise<Group[]> {
+    const adapterships = await this.prisma.groupAdapter.findMany({
+      where: { userId },
+      include: { group: true },
+      orderBy: { assignedAt: 'desc' },
+    });
+    return adapterships.map((adaptership) => adaptership.group);
   }
 }

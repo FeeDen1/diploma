@@ -6,7 +6,7 @@ import { UpdateGroupDto } from './dto/update-group.dto';
 import { EntityNotFoundException } from '../common/exceptions/not-found.exception';
 import { EntityAlreadyExistsException } from '../common/exceptions/conflict.exception';
 import { DomainValidationException } from '../common/exceptions/validation.exception';
-import { Group } from '../../generated/prisma/client';
+import { Direction, Group } from '../../generated/prisma/client';
 
 @Injectable()
 export class GroupsService {
@@ -16,11 +16,17 @@ export class GroupsService {
   ) {}
 
   async createGroup(dto: CreateGroupDto): Promise<Group> {
-    return this.groupsRepository.create({ name: dto.name, year: dto.year });
+    return this.groupsRepository.create({
+      name: dto.name,
+      year: dto.year,
+      direction: dto.direction,
+    });
   }
 
-  async getAllGroups(): Promise<Group[]> {
-    return this.groupsRepository.findAll();
+  async getAllGroups(
+    filters: { direction?: Direction } = {},
+  ): Promise<Group[]> {
+    return this.groupsRepository.findAll(filters);
   }
 
   async getGroupById(id: string): Promise<GroupWithRelations> {
@@ -68,9 +74,11 @@ export class GroupsService {
     await this.getGroupById(groupId);
     const user = await this.usersService.getUserById(userId);
 
-    if (user.role !== 'adapter') {
+    // Куратором группы может быть и adapter, и admin (последний вправе
+    // курировать собственноручно). Студентов сначала надо повысить до adapter.
+    if (user.role !== 'adapter' && user.role !== 'admin') {
       throw new DomainValidationException(
-        'Пользователь должен иметь роль adapter',
+        'В кураторы можно назначить только пользователя с ролью adapter или admin',
       );
     }
 
@@ -91,5 +99,67 @@ export class GroupsService {
     }
 
     await this.groupsRepository.removeAdapter(groupId, userId);
+  }
+
+  /**
+   * Студенты группы с агрегатами по статусам сдач.
+   * Доступ: admin — везде; adapter — только если он куратор именно этой группы.
+   */
+  async getStudentsProgress(
+    groupId: string,
+    requester: { id: string; role: string },
+  ): Promise<
+    {
+      user: import('../../generated/prisma/client').User;
+      submissions: {
+        pending: number;
+        approved: number;
+        rejected: number;
+        total: number;
+      };
+    }[]
+  > {
+    const group = await this.getGroupById(groupId);
+
+    if (requester.role !== 'admin') {
+      const isCurator = group.adapters.some(
+        (adapter) => adapter.userId === requester.id,
+      );
+      if (!isCurator) {
+        throw new DomainValidationException('У вас нет доступа к этой группе');
+      }
+    }
+
+    const breakdown =
+      await this.groupsRepository.findStudentsSubmissionsBreakdown(groupId);
+
+    const byStudent = new Map<
+      string,
+      { pending: number; approved: number; rejected: number; total: number }
+    >();
+
+    for (const row of breakdown) {
+      const counts = byStudent.get(row.studentId) ?? {
+        pending: 0,
+        approved: 0,
+        rejected: 0,
+        total: 0,
+      };
+      if (row.status === 'pending') counts.pending = row.count;
+      else if (row.status === 'approved') counts.approved = row.count;
+      else if (row.status === 'rejected') counts.rejected = row.count;
+      counts.total += row.count;
+      byStudent.set(row.studentId, counts);
+    }
+
+    return group.members.map((member) => ({
+      user: member.user,
+      submissions: byStudent.get(member.userId) ?? {
+        pending: 0,
+        approved: 0,
+        rejected: 0,
+        total: 0,
+      },
+    }));
   }
 }

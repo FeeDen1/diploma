@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "diploma",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -33,6 +33,9 @@
       "expo-secure-store",
       "expo-image-picker",
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "apiBaseUrl": "http://localhost:5001/api"
+    }
   }
 }

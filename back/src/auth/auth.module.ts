@@ -4,9 +4,10 @@ import { AuthService } from './auth.service';
 import { RefreshTokensRepository } from './refresh-tokens.repository';
 import { SharedAuthModule } from './shared-auth.module';
 import { UsersModule } from '../users/users.module';
+import { OtpModule } from '../otp/otp.module';
 
 @Module({
-  imports: [SharedAuthModule, UsersModule],
+  imports: [SharedAuthModule, UsersModule, OtpModule],
   controllers: [AuthController],
   providers: [AuthService, RefreshTokensRepository],
   exports: [AuthService],

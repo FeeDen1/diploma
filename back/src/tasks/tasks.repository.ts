@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma';
-import { Prisma } from '../../generated/prisma/client';
+import { Prisma, TaskCategory } from '../../generated/prisma/client';
+import type { TasksSort } from './dto/list-tasks-query.dto';
 
 const WITH_FILE = { taskFile: true } satisfies Prisma.TaskInclude;
 
@@ -13,7 +14,22 @@ export interface FindTasksOptions {
   includeExpired?: boolean;
   /** Текущее время для фильтрации по сроку (по умолчанию now()) */
   now?: Date;
+  /** Фильтр по категории */
+  category?: TaskCategory;
 }
+
+export interface PaginatedTasksOptions extends FindTasksOptions {
+  sort?: TasksSort;
+  limit: number;
+  offset: number;
+}
+
+const SORT_ORDER: Record<TasksSort, Prisma.TaskOrderByWithRelationInput[]> = {
+  newest: [{ createdAt: 'desc' }],
+  oldest: [{ createdAt: 'asc' }],
+  'points-desc': [{ points: 'desc' }, { createdAt: 'desc' }],
+  'points-asc': [{ points: 'asc' }, { createdAt: 'desc' }],
+};
 
 @Injectable()
 export class TasksRepository {
@@ -29,6 +45,26 @@ export class TasksRepository {
       orderBy: { createdAt: 'desc' },
       include: WITH_FILE,
     });
+  }
+
+  async findAndCount(
+    options: PaginatedTasksOptions,
+  ): Promise<{ items: TaskWithFile[]; total: number }> {
+    const where = this.buildVisibilityWhere(options);
+    const orderBy = SORT_ORDER[options.sort ?? 'newest'];
+
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.task.findMany({
+        where,
+        orderBy,
+        include: WITH_FILE,
+        skip: options.offset,
+        take: options.limit,
+      }),
+      this.prisma.task.count({ where }),
+    ]);
+
+    return { items, total };
   }
 
   async findById(
@@ -64,6 +100,19 @@ export class TasksRepository {
   }
 
   /**
+   * Снимает архив. Если у задания истёк срок — крон вернёт его в архив на
+   * следующем тике. Чтобы этого избежать, перед восстановлением имеет смысл
+   * продлить или убрать expiresAt — это решается в сервисе.
+   */
+  async unarchive(id: string): Promise<TaskWithFile> {
+    return this.prisma.task.update({
+      where: { id },
+      data: { archivedAt: null },
+      include: WITH_FILE,
+    });
+  }
+
+  /**
    * Массовая архивация заданий с истёкшим сроком.
    * Используется кроном.
    */
@@ -89,6 +138,10 @@ export class TasksRepository {
     if (!options.includeExpired) {
       const now = options.now ?? new Date();
       where.OR = [{ expiresAt: null }, { expiresAt: { gt: now } }];
+    }
+
+    if (options.category) {
+      where.category = options.category;
     }
 
     return where;

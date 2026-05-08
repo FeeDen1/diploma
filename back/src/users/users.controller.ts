@@ -19,6 +19,7 @@ import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { ReadUserDto } from './dto/read-user.dto';
 import { ChangeRoleDto } from './dto/change-role.dto';
+import { ReadGroupDto } from '../groups/dto/read-group.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -46,8 +47,8 @@ export class UsersController {
   @Get()
   async getAll(): Promise<ReadUserDto[]> {
     const users = await this.usersService.getAllUsers();
-    return users.map((u) =>
-      ReadUserDto.fromEntity(u, this.usersService.getAvatarUrl(u)),
+    return users.map((user) =>
+      ReadUserDto.fromEntity(user, this.usersService.getAvatarUrl(user)),
     );
   }
 
@@ -71,5 +72,19 @@ export class UsersController {
   ): Promise<ReadUserDto> {
     const user = await this.usersService.changeRole(id, dto.role);
     return ReadUserDto.fromEntity(user, this.usersService.getAvatarUrl(user));
+  }
+
+  @ApiOperation({
+    summary: 'Группы, которые курирует пользователь (admin)',
+  })
+  @ApiResponse({ status: 200, type: [ReadGroupDto] })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.admin)
+  @Get(':id/curated-groups')
+  async getCuratedGroups(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<ReadGroupDto[]> {
+    const groups = await this.usersService.getCuratedGroups(id);
+    return groups.map((group) => ReadGroupDto.fromEntity(group));
   }
 }

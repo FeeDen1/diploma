@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Task, TaskType } from '../../../generated/prisma/client';
+import { Task, TaskCategory, TaskType } from '../../../generated/prisma/client';
 
 export class ReadTaskDto {
   @ApiProperty({ example: 'uuid', description: 'Уникальный идентификатор' })
@@ -20,6 +20,13 @@ export class ReadTaskDto {
     description: 'Тип задания',
   })
   readonly type: TaskType;
+
+  @ApiProperty({
+    enum: TaskCategory,
+    example: TaskCategory.adaptation,
+    description: 'Категория задания',
+  })
+  readonly category: TaskCategory;
 
   @ApiProperty({ example: 10, description: 'Количество баллов' })
   readonly points: number;
@@ -55,6 +62,7 @@ export class ReadTaskDto {
       title: task.title,
       description: task.description,
       type: task.type,
+      category: task.category,
       points: task.points,
       taskFileUrl,
       expiresAt: task.expiresAt,

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { GroupsController } from './groups.controller';
 import { GroupsService } from './groups.service';
 import { GroupsRepository } from './groups.repository';
@@ -6,7 +6,7 @@ import { SharedAuthModule } from '../auth/shared-auth.module';
 import { UsersModule } from '../users/users.module';
 
 @Module({
-  imports: [SharedAuthModule, UsersModule],
+  imports: [SharedAuthModule, forwardRef(() => UsersModule)],
   controllers: [GroupsController],
   providers: [GroupsService, GroupsRepository],
   exports: [GroupsService],

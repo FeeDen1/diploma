@@ -28,8 +28,14 @@ export class ReadUserDto {
   @ApiProperty({ example: 'Иванов', description: 'Фамилия' })
   readonly lastName: string;
 
-  @ApiProperty({ example: 0, description: 'Суммарный рейтинг' })
+  @ApiProperty({ example: 0, description: 'Суммарный рейтинг (накоплено)' })
   readonly ratingTotal: number;
+
+  @ApiProperty({
+    example: 0,
+    description: 'Сколько баллов потрачено в магазине',
+  })
+  readonly spentPoints: number;
 
   @ApiPropertyOptional({
     example: 'https://storage.yandexcloud.net/...',
@@ -50,6 +56,7 @@ export class ReadUserDto {
       firstName: user.firstName,
       lastName: user.lastName,
       ratingTotal: user.ratingTotal,
+      spentPoints: user.spentPoints,
       avatarUrl,
       createdAt: user.createdAt,
     });

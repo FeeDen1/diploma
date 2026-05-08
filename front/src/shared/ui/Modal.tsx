@@ -1,12 +1,12 @@
 import React from 'react';
 import {
   Modal as RNModal,
-  View,
   Text,
   TouchableOpacity,
+  View,
   type ModalProps as RNModalProps,
 } from 'react-native';
-import { Icon } from './Icon';
+import { CloseIcon } from './icons';
 
 interface ModalProps extends Omit<RNModalProps, 'children'> {
   title?: string;
@@ -26,12 +26,10 @@ export function Modal({ title, onClose, children, ...props }: ModalProps) {
         <View className="bg-surface rounded-t-3xl px-5 pt-4 pb-8 max-h-[85%]">
           <View className="flex-row items-center justify-between mb-4">
             {title && (
-              <Text className="text-lg font-bold text-textPrimary">
-                {title}
-              </Text>
+              <Text className="text-lg font-bold text-text-primary">{title}</Text>
             )}
             <TouchableOpacity onPress={onClose} activeOpacity={0.7}>
-              <Icon name="close" size={24} color="#64748B" />
+              <CloseIcon size={24} color="rgb(100 116 139)" />
             </TouchableOpacity>
           </View>
           {children}

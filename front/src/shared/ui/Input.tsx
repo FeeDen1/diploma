@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, TextInput, Text, type TextInputProps } from 'react-native';
+import React from 'react';
+import { Text, TextInput, View, type TextInputProps } from 'react-native';
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -7,6 +7,12 @@ interface InputProps extends TextInputProps {
   containerClassName?: string;
 }
 
+/**
+ * Без локального focus-state — иначе при каждом focus/blur Input ре-рендерится
+ * и его рамка перекрашивается, что заметно дёргается на iOS-симуляторе во время
+ * анимации поднятия клавиатуры. Фокус-стейт можно вернуть позже через
+ * useReducedMotion и без перекраски бордера.
+ */
 export function Input({
   label,
   error,
@@ -14,37 +20,23 @@ export function Input({
   className,
   ...props
 }: InputProps) {
-  const [isFocused, setIsFocused] = useState(false);
-
   return (
     <View className={`mb-4 ${containerClassName ?? ''}`}>
       {label && (
-        <Text className="text-sm font-medium text-textPrimary mb-1.5">
+        <Text className="text-sm font-medium text-text-primary mb-1.5">
           {label}
         </Text>
       )}
       <TextInput
         className={`
-          border rounded-xl px-4 py-3 text-base text-textPrimary bg-surface
-          ${isFocused ? 'border-primary-500' : 'border-border'}
-          ${error ? 'border-error' : ''}
+          border rounded-xl px-4 py-3 text-base text-text-primary bg-surface
+          ${error ? 'border-error' : 'border-border'}
           ${className ?? ''}
         `}
-        placeholderTextColor="#94A3B8"
-        onFocus={(e) => {
-          setIsFocused(true);
-          props.onFocus?.(e);
-        }}
-        onBlur={(e) => {
-          setIsFocused(false);
-          props.onBlur?.(e);
-        }}
+        placeholderTextColor="rgb(148 163 184)"
         {...props}
       />
-      {error && (
-        <Text className="text-xs text-error mt-1">{error}</Text>
-      )}
+      {error && <Text className="text-xs text-error mt-1">{error}</Text>}
     </View>
   );
 }
-

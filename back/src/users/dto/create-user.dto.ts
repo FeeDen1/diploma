@@ -4,14 +4,23 @@ import {
   IsNotEmpty,
   IsString,
   Length,
+  Matches,
   MaxLength,
 } from 'class-validator';
 
+const SPBU_STUDENT_EMAIL = /^st\d+@student\.spbu\.ru$/i;
+
 export class CreateUserDto {
-  @ApiProperty({ example: 'user@mail.ru', description: 'Почтовый ящик' })
+  @ApiProperty({
+    example: 'st106852@student.spbu.ru',
+    description: 'Студенческая почта СПбГУ',
+  })
   @IsNotEmpty({ message: 'Email обязателен' })
   @IsString({ message: 'Должно быть строкой' })
   @IsEmail({}, { message: 'Некорректная почта' })
+  @Matches(SPBU_STUDENT_EMAIL, {
+    message: 'Регистрация только по почте stXXXXXX@student.spbu.ru',
+  })
   readonly email: string;
 
   @ApiProperty({ example: 'password', description: 'Пароль' })

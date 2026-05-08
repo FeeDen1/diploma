@@ -1,27 +1,39 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { router } from 'expo-router';
-import { Input } from '../../../shared/ui/Input';
 import { Button } from '../../../shared/ui/Button';
+import { Input } from '../../../shared/ui/Input';
+import { extractErrorMessage } from '../../../shared/api';
 import { registerSchema, type RegisterFormData } from '../model/authSchema';
-import { authApi } from '../api/authApi';
+import { useRegister } from '../lib/useAuth';
 
-export function RegisterForm() {
-  const [form, setForm] = useState<RegisterFormData>({
-    email: '',
-    password: '',
-    confirmPassword: '',
-  });
-  const [errors, setErrors] = useState<Partial<Record<keyof RegisterFormData, string>>>({});
-  const [loading, setLoading] = useState(false);
+const initialForm: RegisterFormData = {
+  email: '',
+  password: '',
+  confirmPassword: '',
+  firstName: '',
+  lastName: '',
+};
+
+export function RegisterForm(): React.ReactElement {
+  const [form, setForm] = useState<RegisterFormData>(initialForm);
+  const [errors, setErrors] =
+    useState<Partial<Record<keyof RegisterFormData, string>>>({});
   const [apiError, setApiError] = useState('');
+  const register = useRegister();
 
-  const handleRegister = async () => {
-    setApiError('');
-    const result = registerSchema.safeParse(form);
-    if (!result.success) {
+  const handleSubmit = (): void => {
+    const parsed = registerSchema.safeParse(form);
+    if (!parsed.success) {
       const fieldErrors: typeof errors = {};
-      result.error.issues.forEach((issue) => {
+      parsed.error.issues.forEach((issue) => {
         const field = issue.path[0] as keyof RegisterFormData;
         fieldErrors[field] = issue.message;
       });
@@ -30,35 +42,62 @@ export function RegisterForm() {
     }
 
     setErrors({});
-    setLoading(true);
-    try {
-      await authApi.register(form.email, form.password);
-      router.push({ pathname: '/(auth)/otp', params: { email: form.email } });
-    } catch (err) {
-      setApiError(err instanceof Error ? err.message : 'Ошибка регистрации');
-    } finally {
-      setLoading(false);
-    }
+    const { confirmPassword: _confirm, ...payload } = parsed.data;
+    register.mutate(payload, {
+      onSuccess: ({ email }) => {
+        setApiError('');
+        router.replace({ pathname: '/(auth)/otp', params: { email } });
+      },
+      onError: (error) =>
+        setApiError(extractErrorMessage(error, 'Ошибка регистрации')),
+    });
   };
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       className="flex-1"
     >
-      <View className="flex-1 justify-center px-6">
-        <Text className="text-3xl font-bold text-textPrimary mb-2">
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{
+          paddingHorizontal: 24,
+          paddingTop: 40,
+          paddingBottom: 200,
+        }}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        showsVerticalScrollIndicator={false}
+      >
+        <Text className="text-3xl font-bold text-text-primary mb-2">
           Регистрация
         </Text>
-        <Text className="text-base text-textSecondary mb-8">
+        <Text className="text-base text-text-secondary mb-8">
           Создайте аккаунт с университетской почтой
         </Text>
 
         {apiError ? (
-          <View className="bg-red-50 rounded-xl p-3 mb-4">
+          <View className="bg-error/10 rounded-xl p-3 mb-4">
             <Text className="text-sm text-error">{apiError}</Text>
           </View>
         ) : null}
+
+        <Input
+          label="Имя"
+          placeholder="Иван"
+          value={form.firstName}
+          onChangeText={(firstName) => setForm((prev) => ({ ...prev, firstName }))}
+          error={errors.firstName}
+        />
+
+        <Input
+          label="Фамилия"
+          placeholder="Петров"
+          value={form.lastName}
+          onChangeText={(lastName) => setForm((prev) => ({ ...prev, lastName }))}
+          error={errors.lastName}
+        />
 
         <Input
           label="Email"
@@ -73,11 +112,15 @@ export function RegisterForm() {
 
         <Input
           label="Пароль"
-          placeholder="Минимум 6 символов"
+          placeholder="Минимум 8 символов"
           value={form.password}
           onChangeText={(password) => setForm((prev) => ({ ...prev, password }))}
           error={errors.password}
           secureTextEntry
+          autoCapitalize="none"
+          autoCorrect={false}
+          autoComplete="off"
+          textContentType="oneTimeCode"
         />
 
         <Input
@@ -89,25 +132,25 @@ export function RegisterForm() {
           }
           error={errors.confirmPassword}
           secureTextEntry
+          autoCapitalize="none"
+          autoCorrect={false}
+          autoComplete="off"
+          textContentType="oneTimeCode"
         />
 
         <Button
           title="Зарегистрироваться"
-          onPress={handleRegister}
-          loading={loading}
+          onPress={handleSubmit}
+          loading={register.isPending}
           fullWidth
         />
 
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="mt-4 items-center"
-        >
-          <Text className="text-sm text-primary-600 font-medium">
+        <TouchableOpacity onPress={() => router.back()} className="mt-4 items-center">
+          <Text className="text-sm text-primary font-medium">
             Уже есть аккаунт? Войти
           </Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
-

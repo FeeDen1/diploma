@@ -6,7 +6,10 @@ import { ValidationFailedException } from './common/exceptions/validation-failed
 import { DomainExceptionFilter } from './common/filters/domain-exception.filter';
 
 async function bootstrap() {
-  const PORT = process.env.PORT || 5000;
+  const PORT = Number(process.env.PORT ?? 5001);
+  // 0.0.0.0 — слушать на всех интерфейсах, чтобы устройство в локальной Wi-Fi
+  // могло достучаться до бэка по IP ноута. Localhost-доступ это не ломает.
+  const HOST = process.env.HOST ?? '0.0.0.0';
   const app = await NestFactory.create(AppModule);
 
   app.enableCors();
@@ -46,8 +49,8 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  await app.listen(PORT, () =>
-    console.log(`Server is running on port ${PORT}`),
+  await app.listen(PORT, HOST, () =>
+    console.log(`Server is running on http://${HOST}:${PORT}`),
   );
 }
 bootstrap().catch((err) => {

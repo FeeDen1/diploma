@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Image, Text } from 'react-native';
+import { Image, Text, View } from 'react-native';
 
 interface AvatarProps {
   uri?: string | null;
@@ -25,29 +25,24 @@ export function Avatar({ uri, name, size = 'md' }: AvatarProps) {
   const initials = name
     ? name
         .split(' ')
-        .map((n) => n[0])
+        .map((part) => part[0])
+        .filter(Boolean)
         .join('')
         .toUpperCase()
         .slice(0, 2)
     : '?';
 
   if (uri) {
-    return (
-      <Image
-        source={{ uri }}
-        className={`${sizeMap[size]} rounded-full`}
-      />
-    );
+    return <Image source={{ uri }} className={`${sizeMap[size]} rounded-full`} />;
   }
 
   return (
     <View
-      className={`${sizeMap[size]} rounded-full bg-primary-100 items-center justify-center`}
+      className={`${sizeMap[size]} rounded-full bg-primary-soft items-center justify-center`}
     >
-      <Text className={`${textSizeMap[size]} font-semibold text-primary-600`}>
+      <Text className={`${textSizeMap[size]} font-semibold text-primary`}>
         {initials}
       </Text>
     </View>
   );
 }
-

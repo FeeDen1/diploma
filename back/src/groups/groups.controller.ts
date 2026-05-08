@@ -4,18 +4,21 @@ import {
   Delete,
   Get,
   Param,
+  ParseEnumPipe,
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { UserRole } from '../../generated/prisma/client';
+import { Direction, UserRole } from '../../generated/prisma/client';
 import { GroupsService } from './groups.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
@@ -23,9 +26,13 @@ import { ReadGroupDto } from './dto/read-group.dto';
 import { ReadGroupDetailDto } from './dto/read-group-detail.dto';
 import { AddMemberDto } from './dto/add-member.dto';
 import { AddAdapterDto } from './dto/add-adapter.dto';
+import { GroupStudentProgressDto } from './dto/group-student-progress.dto';
+import { ReadUserDto } from '../users/dto/read-user.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { TokenPayload } from '../auth/interfaces/token-payload.interface';
 
 @ApiTags('Группы')
 @ApiBearerAuth()
@@ -43,13 +50,19 @@ export class GroupsController {
     return ReadGroupDto.fromEntity(group);
   }
 
-  @ApiOperation({ summary: 'Получить все группы' })
+  @ApiOperation({
+    summary: 'Получить все группы (опциональный фильтр по направлению)',
+  })
   @ApiResponse({ status: 200, type: [ReadGroupDto] })
+  @ApiQuery({ name: 'direction', enum: Direction, required: false })
   @UseGuards(JwtAuthGuard)
   @Get()
-  async getAll(): Promise<ReadGroupDto[]> {
-    const groups = await this.groupsService.getAllGroups();
-    return groups.map((g) => ReadGroupDto.fromEntity(g));
+  async getAll(
+    @Query('direction', new ParseEnumPipe(Direction, { optional: true }))
+    direction?: Direction,
+  ): Promise<ReadGroupDto[]> {
+    const groups = await this.groupsService.getAllGroups({ direction });
+    return groups.map((group) => ReadGroupDto.fromEntity(group));
   }
 
   @ApiOperation({
@@ -63,6 +76,27 @@ export class GroupsController {
   ): Promise<ReadGroupDetailDto> {
     const group = await this.groupsService.getGroupById(id);
     return ReadGroupDetailDto.fromEntity(group);
+  }
+
+  @ApiOperation({
+    summary:
+      'Прогресс студентов группы (admin/adapter-куратор этой группы): счётчики сдач по статусам',
+  })
+  @ApiResponse({ status: 200, type: [GroupStudentProgressDto] })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.admin, UserRole.adapter)
+  @Get(':id/students-progress')
+  async getStudentsProgress(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: TokenPayload,
+  ): Promise<GroupStudentProgressDto[]> {
+    const items = await this.groupsService.getStudentsProgress(id, user);
+    return items.map((it) =>
+      Object.assign(new GroupStudentProgressDto(), {
+        user: ReadUserDto.fromEntity(it.user),
+        submissions: it.submissions,
+      }),
+    );
   }
 
   @ApiOperation({ summary: 'Обновить группу (admin)' })

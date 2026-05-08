@@ -35,6 +35,7 @@ model User {
   firstName    String    @map("first_name") @db.VarChar(50)
   lastName     String    @map("last_name") @db.VarChar(50)
   ratingTotal  Int        @default(0) @map("rating_total")
+  spentPoints  Int        @default(0) @map("spent_points")
   createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt    DateTime   @updatedAt @map("updated_at") @db.Timestamptz()
 
@@ -46,9 +47,58 @@ model User {
   groupAdapterships GroupAdapter[]
   submissions       TaskSubmission[]
   uploadedFiles     File[]          @relation("UploadedFiles")
+  emailOtps         EmailOtp[]
+  deviceTokens      DeviceToken[]
+  rewardOrders      RewardRedemption[]
 
   @@index([role, status])
   @@map("users")
+}
+
+enum DevicePlatform {
+  ios
+  android
+}
+
+/**
+ * Expo Push Token для push-уведомлений. Один и тот же физический девайс
+ * может перепривязываться к разным юзерам (если на устройстве сменили
+ * аккаунт), поэтому уникальность по токену, а не по паре (token, userId).
+ */
+model DeviceToken {
+  id          String         @id @default(uuid()) @db.Uuid
+  userId      String         @map("user_id") @db.Uuid
+  expoToken   String         @unique @map("expo_token") @db.VarChar(255)
+  platform    DevicePlatform
+  lastSeenAt  DateTime       @default(now()) @map("last_seen_at") @db.Timestamptz()
+  createdAt   DateTime       @default(now()) @map("created_at") @db.Timestamptz()
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("device_tokens")
+}
+
+enum OtpPurpose {
+  email_verification
+  password_reset
+}
+
+model EmailOtp {
+  id          String     @id @default(uuid()) @db.Uuid
+  userId      String     @map("user_id") @db.Uuid
+  purpose     OtpPurpose
+  codeHash    String     @map("code_hash") @db.VarChar(255)
+  attempts    Int        @default(0)
+  maxAttempts Int        @default(5) @map("max_attempts")
+  expiresAt   DateTime   @map("expires_at") @db.Timestamptz()
+  usedAt      DateTime?  @map("used_at") @db.Timestamptz()
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz()
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose, usedAt])
+  @@map("email_otps")
 }
 
 model RefreshToken {
@@ -64,15 +114,24 @@ model RefreshToken {
   @@map("refresh_tokens")
 }
 
+enum Direction {
+  pmi
+  piit
+  bd
+  pkt
+}
+
 model Group {
-  id        String   @id @default(uuid()) @db.Uuid
-  name      String   @db.VarChar(100)
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String    @unique @db.VarChar(100)
   year      Int
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  direction Direction
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz()
 
   members  GroupMember[]
   adapters GroupAdapter[]
 
+  @@index([direction])
   @@map("groups")
 }
 
@@ -104,6 +163,12 @@ enum TaskType {
   general
 }
 
+enum TaskCategory {
+  socialization
+  adaptation
+  self_realization
+}
+
 enum SubmissionStatus {
   pending
   approved
@@ -111,22 +176,24 @@ enum SubmissionStatus {
 }
 
 model Task {
-  id          String    @id @default(uuid()) @db.Uuid
-  title       String    @db.VarChar(200)
-  description String    @db.Text
-  type        TaskType  @default(general)
+  id          String       @id @default(uuid()) @db.Uuid
+  title       String       @db.VarChar(200)
+  description String       @db.Text
+  type        TaskType     @default(general)
+  category    TaskCategory
   points      Int
-  taskFileId  String?   @unique @map("task_file_id") @db.Uuid
-  expiresAt   DateTime? @map("expires_at") @db.Timestamptz()
-  archivedAt  DateTime? @map("archived_at") @db.Timestamptz()
-  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz()
-  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz()
+  taskFileId  String?      @unique @map("task_file_id") @db.Uuid
+  expiresAt   DateTime?    @map("expires_at") @db.Timestamptz()
+  archivedAt  DateTime?    @map("archived_at") @db.Timestamptz()
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime     @updatedAt @map("updated_at") @db.Timestamptz()
 
   taskFile    File?            @relation("TaskFile", fields: [taskFileId], references: [id], onDelete: SetNull)
   submissions TaskSubmission[]
 
   @@index([archivedAt])
   @@index([expiresAt])
+  @@index([category])
   @@map("tasks")
 }
 
@@ -151,6 +218,7 @@ enum FileType {
   avatar
   task
   submission
+  reward
 }
 
 enum FileVisibility {
@@ -173,6 +241,49 @@ model File {
   avatarOf       User?           @relation("AvatarFile")
   taskFile       Task?           @relation("TaskFile")
   submissionFile TaskSubmission? @relation("SubmissionFile")
+  rewardImage    RewardItem?     @relation("RewardImage")
 
   @@map("files")
+}
+
+model RewardItem {
+  id          String    @id @default(uuid()) @db.Uuid
+  title       String    @db.VarChar(200)
+  price       Int
+  imageFileId String?   @unique @map("image_file_id") @db.Uuid
+  archivedAt  DateTime? @map("archived_at") @db.Timestamptz()
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+
+  imageFile   File?               @relation("RewardImage", fields: [imageFileId], references: [id], onDelete: SetNull)
+  redemptions RewardRedemption[]
+
+  @@index([archivedAt])
+  @@map("reward_items")
+}
+
+enum RedemptionStatus {
+  pending
+  fulfilled
+  cancelled
+}
+
+/**
+ * Заказ мерча. itemTitle/itemPrice — снимок на момент покупки: даже если
+ * лот удалят или переименуют, в истории заказа останется корректное
+ * отображение того, что и за сколько было заказано.
+ */
+model RewardRedemption {
+  id           String           @id @default(uuid()) @db.Uuid
+  userId       String           @map("user_id") @db.Uuid
+  rewardItemId String?          @map("reward_item_id") @db.Uuid
+  itemTitle    String           @map("item_title") @db.VarChar(200)
+  itemPrice    Int              @map("item_price")
+  status       RedemptionStatus @default(pending)
+  createdAt    DateTime         @default(now()) @map("created_at") @db.Timestamptz()
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rewardItem RewardItem? @relation(fields: [rewardItemId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@map("reward_redemptions")
 }

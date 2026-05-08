@@ -4,7 +4,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { EntityAlreadyExistsException } from '../common/exceptions/conflict.exception';
 import { EntityNotFoundException } from '../common/exceptions/not-found.exception';
 import { hashPassword } from '../common/utils/password.utils';
-import { UserRole } from '../../generated/prisma/client';
+import { Group, UserRole, UserStatus } from '../../generated/prisma/client';
 import { S3Service } from '../s3/s3.service';
 
 @Injectable()
@@ -51,6 +51,11 @@ export class UsersService {
     return this.usersRepository.update(id, { role });
   }
 
+  async activate(id: string): Promise<UserWithAvatar> {
+    await this.getUserById(id);
+    return this.usersRepository.update(id, { status: UserStatus.active });
+  }
+
   async setAvatar(userId: string, fileId: string): Promise<UserWithAvatar> {
     await this.getUserById(userId);
     return this.usersRepository.update(userId, {
@@ -61,5 +66,20 @@ export class UsersService {
   getAvatarUrl(user: UserWithAvatar): string | null {
     if (!user.avatarFile) return null;
     return this.s3Service.getPublicUrl(user.avatarFile.objectKey);
+  }
+
+  async getMyGroups(
+    userId: string,
+  ): Promise<{ memberOf: Group[]; curatorOf: Group[] }> {
+    const [memberOf, curatorOf] = await Promise.all([
+      this.usersRepository.findMembershipGroups(userId),
+      this.usersRepository.findCuratedGroups(userId),
+    ]);
+    return { memberOf, curatorOf };
+  }
+
+  async getCuratedGroups(userId: string): Promise<Group[]> {
+    await this.getUserById(userId);
+    return this.usersRepository.findCuratedGroups(userId);
   }
 }

@@ -1,37 +1,61 @@
 import React from 'react';
-import { ScrollView } from 'react-native';
-import { FilterChip } from '../../../shared/ui/FilterChip';
-import { ACHIEVEMENT_TYPES, type AchievementType } from '../../../shared/config/api';
+import { Text, TouchableOpacity, View } from 'react-native';
+import {
+  TASK_CATEGORIES,
+  TASK_CATEGORY_LABELS,
+  type TaskCategory,
+} from '../../../shared/api/tasks';
 
-interface AchievementFiltersProps {
-  selectedType: AchievementType | null;
-  onSelectType: (type: AchievementType | null) => void;
+interface Props {
+  selected: TaskCategory | null;
+  onSelect: (category: TaskCategory | null) => void;
 }
 
-export function AchievementFilters({
-  selectedType,
-  onSelectType,
-}: AchievementFiltersProps) {
+interface ChipProps {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+}
+
+function Chip({ label, active, onPress }: ChipProps): React.ReactElement {
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerClassName="px-4 py-3"
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.7}
+      className={`px-3 h-9 rounded-full border items-center justify-center ${
+        active ? 'bg-primary border-primary' : 'bg-surface border-border'
+      }`}
     >
-      <FilterChip
-        label="Все"
-        selected={selectedType === null}
-        onPress={() => onSelectType(null)}
-      />
-      {ACHIEVEMENT_TYPES.map((type) => (
-        <FilterChip
-          key={type}
-          label={type}
-          selected={selectedType === type}
-          onPress={() => onSelectType(selectedType === type ? null : type)}
-        />
-      ))}
-    </ScrollView>
+      <Text
+        className={`text-xs font-medium ${
+          active ? 'text-white' : 'text-text-secondary'
+        }`}
+      >
+        {label}
+      </Text>
+    </TouchableOpacity>
   );
 }
 
+export function AchievementFilters({
+  selected,
+  onSelect,
+}: Props): React.ReactElement {
+  return (
+    <View className="flex-row flex-wrap px-4 py-3" style={{ gap: 6 }}>
+      <Chip
+        label="Все"
+        active={selected === null}
+        onPress={() => onSelect(null)}
+      />
+      {TASK_CATEGORIES.map((category) => (
+        <Chip
+          key={category}
+          label={TASK_CATEGORY_LABELS[category]}
+          active={selected === category}
+          onPress={() => onSelect(selected === category ? null : category)}
+        />
+      ))}
+    </View>
+  );
+}

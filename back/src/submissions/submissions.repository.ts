@@ -35,6 +35,46 @@ export class SubmissionsRepository {
     return existing !== null;
   }
 
+  /**
+   * Атомарная замена файла-доказательства + сброс статуса в pending.
+   * Используется при ресабмите (студент перезаливает фото после rejected).
+   * Если статус был approved, дельту рейтинга вычитаем — сабмит уходит на повторную проверку.
+   */
+  async replaceFileAndResetStatus(
+    id: string,
+    newFileId: string,
+    studentId: string,
+    oldStatus: SubmissionStatus,
+    taskPoints: number,
+  ): Promise<SubmissionWithRelations> {
+    const ratingDelta = this.calculateRatingDelta(
+      oldStatus,
+      SubmissionStatus.pending,
+      taskPoints,
+    );
+
+    const [submission] = await this.prisma.$transaction([
+      this.prisma.taskSubmission.update({
+        where: { id },
+        data: {
+          submissionFileId: newFileId,
+          status: SubmissionStatus.pending,
+        },
+        include: INCLUDE_RELATIONS,
+      }),
+      ...(ratingDelta !== 0
+        ? [
+            this.prisma.user.update({
+              where: { id: studentId },
+              data: { ratingTotal: { increment: ratingDelta } },
+            }),
+          ]
+        : []),
+    ]);
+
+    return submission as SubmissionWithRelations;
+  }
+
   async findById(id: string): Promise<SubmissionWithRelations | null> {
     return this.prisma.taskSubmission.findUnique({
       where: { id },
@@ -123,7 +163,22 @@ export class SubmissionsRepository {
       select: { userId: true },
       distinct: ['userId'],
     });
-    return members.map((m) => m.userId);
+    return members.map((member) => member.userId);
+  }
+
+  /**
+   * Все кураторы всех групп, в которых состоит студент. Нужно для рассылки
+   * пуш-уведомления «студент сдал работу».
+   */
+  async getAdapterIdsForStudent(studentId: string): Promise<string[]> {
+    const adapters = await this.prisma.groupAdapter.findMany({
+      where: {
+        group: { members: { some: { userId: studentId } } },
+      },
+      select: { userId: true },
+      distinct: ['userId'],
+    });
+    return adapters.map((adapter) => adapter.userId);
   }
 
   private calculateRatingDelta(

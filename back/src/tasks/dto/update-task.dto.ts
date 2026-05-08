@@ -9,7 +9,7 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
-import { TaskType } from '../../../generated/prisma/client';
+import { TaskCategory, TaskType } from '../../../generated/prisma/client';
 
 export class UpdateTaskDto {
   @ApiPropertyOptional({
@@ -37,6 +37,11 @@ export class UpdateTaskDto {
   @IsOptional()
   @IsEnum(TaskType, { message: 'Некорректный тип задания' })
   readonly type?: TaskType;
+
+  @ApiPropertyOptional({ enum: TaskCategory, description: 'Категория задания' })
+  @IsOptional()
+  @IsEnum(TaskCategory, { message: 'Некорректная категория' })
+  readonly category?: TaskCategory;
 
   @ApiPropertyOptional({ example: 15, description: 'Количество баллов' })
   @IsOptional()

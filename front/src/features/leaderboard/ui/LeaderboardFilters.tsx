@@ -1,54 +1,69 @@
-import React from 'react';
-import { View, ScrollView } from 'react-native';
+import React, { useMemo } from 'react';
+import { ScrollView, View } from 'react-native';
 import { FilterChip } from '../../../shared/ui/FilterChip';
-import { DIRECTIONS, GROUPS_BY_DIRECTION, type Direction } from '../../../shared/config/api';
+import {
+  DIRECTIONS,
+  DIRECTION_LABELS,
+  type Direction,
+} from '../../../shared/api/groups';
+import { useGroups } from '../../../entities/group';
 
-interface LeaderboardFiltersProps {
-  selectedDirection: Direction | undefined;
-  selectedGroup: string | undefined;
-  onDirectionChange: (direction: Direction | undefined) => void;
-  onGroupChange: (group: string | undefined) => void;
+interface Props {
+  direction: Direction | null;
+  groupId: string | null;
+  onDirectionChange: (direction: Direction | null) => void;
+  onGroupChange: (groupId: string | null) => void;
 }
 
 export function LeaderboardFilters({
-  selectedDirection,
-  selectedGroup,
+  direction,
+  groupId,
   onDirectionChange,
   onGroupChange,
-}: LeaderboardFiltersProps) {
-  const availableGroups = selectedDirection
-    ? GROUPS_BY_DIRECTION[selectedDirection]
-    : [];
+}: Props): React.ReactElement {
+  const { data: groups } = useGroups(direction ? { direction } : {});
+  const sortedGroups = useMemo(
+    () =>
+      (groups ?? [])
+        .slice()
+        .sort((first, second) => first.name.localeCompare(second.name)),
+    [groups],
+  );
 
   return (
     <View>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerClassName="px-4 py-2"
+        style={{ flexGrow: 0 }}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingVertical: 8,
+          alignItems: 'center',
+        }}
       >
         <FilterChip
           label="Все"
-          selected={!selectedDirection}
+          selected={direction === null}
           onPress={() => {
-            onDirectionChange(undefined);
-            onGroupChange(undefined);
+            onDirectionChange(null);
+            onGroupChange(null);
           }}
         />
-        {DIRECTIONS.map((dir) => (
+        {DIRECTIONS.map((directionOption) => (
           <FilterChip
-            key={dir}
-            label={dir}
-            selected={selectedDirection === dir}
+            key={directionOption}
+            label={DIRECTION_LABELS[directionOption]}
+            selected={direction === directionOption}
             onPress={() => {
-              onDirectionChange(selectedDirection === dir ? undefined : dir);
-              onGroupChange(undefined);
+              onDirectionChange(direction === directionOption ? null : directionOption);
+              onGroupChange(null);
             }}
           />
         ))}
       </ScrollView>
 
-      {selectedDirection && availableGroups.length > 0 && (
+      {direction ? (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -56,20 +71,19 @@ export function LeaderboardFilters({
         >
           <FilterChip
             label="Все группы"
-            selected={!selectedGroup}
-            onPress={() => onGroupChange(undefined)}
+            selected={groupId === null}
+            onPress={() => onGroupChange(null)}
           />
-          {availableGroups.map((g) => (
+          {sortedGroups.map((group) => (
             <FilterChip
-              key={g}
-              label={`Гр. ${g}`}
-              selected={selectedGroup === g}
-              onPress={() => onGroupChange(selectedGroup === g ? undefined : g)}
+              key={group.id}
+              label={group.name}
+              selected={groupId === group.id}
+              onPress={() => onGroupChange(groupId === group.id ? null : group.id)}
             />
           ))}
         </ScrollView>
-      )}
+      ) : null}
     </View>
   );
 }
-

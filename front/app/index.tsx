@@ -1,33 +1,37 @@
 import React, { useEffect } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 import { router } from 'expo-router';
 import { storage } from '../src/shared/lib/storage';
-import { useAuthStore } from '../src/entities/user';
-import { authApi } from '../src/features/auth';
+import { usersApi } from '../src/shared/api/users';
 
-export default function IndexScreen() {
+export default function IndexScreen(): React.ReactElement {
   useEffect(() => {
     let mounted = true;
 
-    async function bootstrap() {
+    async function bootstrap(): Promise<void> {
       try {
         const onboardingDone = await storage.isOnboardingCompleted();
-        useAuthStore.getState().setOnboardingCompleted(onboardingDone);
-
         if (!onboardingDone) {
           if (mounted) router.replace('/(onboarding)');
           return;
         }
 
-        const isAuth = await authApi.checkAuth();
-        if (!isAuth) {
+        const accessToken = await storage.getAccessToken();
+        if (!accessToken) {
+          if (mounted) router.replace('/(auth)/login');
+          return;
+        }
+
+        // Проверяем валидность токена + что профиль существует
+        try {
+          await usersApi.getMe();
+        } catch {
+          await storage.clearTokens();
           if (mounted) router.replace('/(auth)/login');
           return;
         }
 
         const profileDone = await storage.isProfileSetupCompleted();
-        useAuthStore.getState().setProfileSetupCompleted(profileDone);
-
         if (!profileDone) {
           if (mounted) router.replace('/(onboarding)/setup');
           return;
@@ -39,7 +43,7 @@ export default function IndexScreen() {
       }
     }
 
-    bootstrap();
+    void bootstrap();
 
     return () => {
       mounted = false;
@@ -47,8 +51,8 @@ export default function IndexScreen() {
   }, []);
 
   return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F8FAFC' }}>
-      <ActivityIndicator size="large" color="#4F46E5" />
+    <View className="flex-1 items-center justify-center bg-background">
+      <ActivityIndicator size="large" color="rgb(79 70 229)" />
     </View>
   );
 }

@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, TextInput } from 'react-native';
-import { Icon } from './Icon';
+import { TextInput, View } from 'react-native';
+import { SearchIcon } from './icons';
 
 interface SearchBarProps {
   value: string;
@@ -14,14 +14,14 @@ export function SearchBar({
   placeholder = 'Поиск...',
 }: SearchBarProps) {
   return (
-    <View className="flex-row items-center bg-gray-100 rounded-xl px-3 py-2.5">
-      <Icon name="search" size={20} color="#94A3B8" />
+    <View className="flex-row items-center bg-surface-secondary rounded-xl px-3 py-2.5">
+      <SearchIcon size={20} color="rgb(148 163 184)" />
       <TextInput
-        className="flex-1 ml-2 text-base text-textPrimary"
+        className="flex-1 ml-2 text-base text-text-primary"
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor="#94A3B8"
+        placeholderTextColor="rgb(148 163 184)"
       />
     </View>
   );

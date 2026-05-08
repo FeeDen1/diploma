@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { TasksRepository, TaskWithFile } from './tasks.repository';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
+import { ListTasksQueryDto, TasksSort } from './dto/list-tasks-query.dto';
 import { EntityNotFoundException } from '../common/exceptions/not-found.exception';
 import { S3Service } from '../s3/s3.service';
 import { UserRole } from '../../generated/prisma/client';
@@ -19,14 +20,48 @@ export class TasksService {
       title: dto.title,
       description: dto.description,
       type: dto.type,
+      category: dto.category,
       points: dto.points,
       taskFileId: dto.taskFileId,
       expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : undefined,
     });
   }
 
-  async getAllTasks(user: TokenPayload): Promise<TaskWithFile[]> {
-    return this.tasksRepository.findAll(this.visibilityFor(user));
+  async getAllTasks(_user: TokenPayload): Promise<TaskWithFile[]> {
+    return this.tasksRepository.findAll(this.visibilityFor());
+  }
+
+  async listTasks(
+    user: TokenPayload,
+    query: ListTasksQueryDto,
+  ): Promise<{
+    items: TaskWithFile[];
+    total: number;
+    limit: number;
+    offset: number;
+  }> {
+    const limit = query.limit ?? 20;
+    const offset = query.offset ?? 0;
+    const sort: TasksSort = query.sort ?? 'newest';
+
+    // Перед чтением «прибиваем» просрочку — крон тикает раз в час, а
+    // пользователь должен видеть актуальную картину сразу. Это дешёвый
+    // updateMany по индексу expiresAt.
+    await this.tasksRepository.archiveExpired();
+
+    // Архив видит только admin. Студент и куратор флаг игнорируют.
+    const includeArchived =
+      user.role === UserRole.admin && query.includeArchived === true;
+
+    const { items, total } = await this.tasksRepository.findAndCount({
+      ...this.visibilityFor(),
+      includeArchived,
+      category: query.category,
+      sort,
+      limit,
+      offset,
+    });
+    return { items, total, limit, offset };
   }
 
   /**
@@ -34,11 +69,8 @@ export class TasksService {
    * Студенты не видят архивированные/просроченные — для них такие задания «не существуют».
    * Для бизнес-логики (например, проверка существования при сдаче) используется getActiveTaskById.
    */
-  async getTaskById(id: string, user: TokenPayload): Promise<TaskWithFile> {
-    const task = await this.tasksRepository.findById(
-      id,
-      this.visibilityFor(user),
-    );
+  async getTaskById(id: string, _user: TokenPayload): Promise<TaskWithFile> {
+    const task = await this.tasksRepository.findById(id, this.visibilityFor());
     if (!task) {
       throw new EntityNotFoundException('Task', id);
     }
@@ -84,6 +116,22 @@ export class TasksService {
     await this.tasksRepository.archive(id);
   }
 
+  /**
+   * Возвращает архивное задание в активный список. Если у задания просрочен
+   * expiresAt — крон снова его архивирует, поэтому при восстановлении
+   * автоматически снимаем срок (admin вправе выставить новый при необходимости).
+   */
+  async unarchiveTask(id: string): Promise<TaskWithFile> {
+    const task = await this.getTaskByIdRaw(id);
+    if (!task.archivedAt) {
+      return task;
+    }
+    if (task.expiresAt && task.expiresAt.getTime() <= Date.now()) {
+      await this.tasksRepository.update(id, { expiresAt: null });
+    }
+    return this.tasksRepository.unarchive(id);
+  }
+
   getTaskFileUrl(task: TaskWithFile): string | null {
     if (!task.taskFile) return null;
     return this.s3Service.getPublicUrl(task.taskFile.objectKey);
@@ -91,15 +139,15 @@ export class TasksService {
 
   /**
    * Правила видимости заданий:
-   *  - admin / adapter: видят все неархивированные (включая просроченные).
-   *  - student: видит только активные (не архив, не просроченные).
+   *  - все роли: видят только не-архив. Просрочка перед чтением физически
+   *    архивируется в listTasks, поэтому понятие «просроченное активное»
+   *    в выдаче не существует.
+   *  - admin может включить архив через includeArchived в query.
    */
-  private visibilityFor(user: TokenPayload) {
-    const isStaff =
-      user.role === UserRole.admin || user.role === UserRole.adapter;
+  private visibilityFor() {
     return {
       includeArchived: false,
-      includeExpired: isStaff,
+      includeExpired: false,
     };
   }
 }
