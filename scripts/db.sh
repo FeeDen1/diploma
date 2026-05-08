@@ -41,9 +41,17 @@ docker_exec() {
     ssh_remote "cd $APP_DIR && docker compose --env-file .env.production -f $COMPOSE_FILE exec $*"
 }
 
-# Запускает docker compose exec БЕЗ TTY (для пайпов / неинтерактивно)
+# Запускает docker compose exec БЕЗ TTY (для пайпов / неинтерактивно).
+# stdin локального процесса прокидывается до stdin контейнера —
+# поэтому SQL надёжнее всего передавать через `echo "..." | docker_exec...`.
 docker_exec_noninteractive() {
     ssh_remote "cd $APP_DIR && docker compose --env-file .env.production -f $COMPOSE_FILE exec -T $*"
+}
+
+# Прогоняет произвольный SQL в prod-БД. SQL читается из stdin функции —
+# это снимает ад экранирования кавычек через четыре слоя shell'ов.
+psql_stdin() {
+    docker_exec_noninteractive postgres psql -U pmtask -d pmtask -v ON_ERROR_STOP=1
 }
 
 # Извлекает значение переменной из локального .env.production
@@ -94,14 +102,16 @@ cmd_make_admin() {
     [[ -n "$email" ]] || fail "usage: $0 make-admin <email>"
 
     step "Делаю $email админом"
-    docker_exec_noninteractive postgres psql -U pmtask -d pmtask \
-        -c "UPDATE \"User\" SET role = 'admin' WHERE email = '$email' RETURNING id, email, role;"
+    psql_stdin <<SQL
+UPDATE "User" SET role = 'admin' WHERE email = '$email' RETURNING id, email, role;
+SQL
 }
 
 cmd_list_users() {
     step "Список юзеров"
-    docker_exec_noninteractive postgres psql -U pmtask -d pmtask \
-        -c "SELECT email, role, \"createdAt\" FROM \"User\" ORDER BY \"createdAt\" DESC;"
+    psql_stdin <<'SQL'
+SELECT email, role, "createdAt" FROM "User" ORDER BY "createdAt" DESC;
+SQL
 }
 
 cmd_backup() {
