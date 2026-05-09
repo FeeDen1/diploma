@@ -160,11 +160,15 @@ echo -e "${GREEN}═════════════════════
 
 cat <<EOF
 
-${YELLOW}Что дальше:${NC}
-  - Бэк живёт на сервере, но НЕ публикуется в интернет (только loopback).
-    Это будет починено на этапе 4 (Caddy + домен + TLS).
-  - Логи смотреть так:
+${YELLOW}API доступен:${NC}
+  https://api.spbu-pmi.ru/api/health
+  https://api.spbu-pmi.ru/api/docs   (Swagger)
+
+${YELLOW}Полезные команды:${NC}
+  Логи бэка:
       ssh $USER_NAME@$HOST 'cd $APP_DIR && docker compose --env-file .env.production -f $COMPOSE_FILE logs -f backend'
-  - Перезапустить только бэк:
+  Логи Caddy:
+      ssh $USER_NAME@$HOST 'cd $APP_DIR && docker compose --env-file .env.production -f $COMPOSE_FILE logs -f caddy'
+  Перезапустить только бэк:
       ssh $USER_NAME@$HOST 'cd $APP_DIR && docker compose --env-file .env.production -f $COMPOSE_FILE up -d --build backend'
 EOF
