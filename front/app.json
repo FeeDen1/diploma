@@ -33,8 +33,7 @@
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.READ_MEDIA_IMAGES",
-        "android.permission.POST_NOTIFICATIONS",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.POST_NOTIFICATIONS"
       ]
     },
     "web": {
@@ -67,6 +66,12 @@
         "projectId": "783a3b7c-5bf2-4627-8c8e-0935c21c319a"
       }
     },
-    "owner": "denis1231"
+    "owner": "denis1231",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/783a3b7c-5bf2-4627-8c8e-0935c21c319a"
+    }
   }
 }
