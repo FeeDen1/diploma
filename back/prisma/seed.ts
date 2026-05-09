@@ -39,6 +39,15 @@ const GROUPS: GroupSeed[] = Object.entries(NUMBER_TO_DIRECTION).map(
   }),
 );
 
+/**
+ * Тестовая группа для прохождения e2e-сценариев на проде без замусоривания
+ * реального лидерборда первокурсников. Лежит на направлении ПМИ — оно
+ * самое массовое, и тестовая группа не выделится в фильтрах.
+ */
+const TEST_GROUPS: GroupSeed[] = [
+  { name: 'Test', number: 'test', direction: 'pmi' },
+];
+
 async function main(): Promise<void> {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
@@ -50,7 +59,7 @@ async function main(): Promise<void> {
   });
 
   try {
-    for (const group of GROUPS) {
+    for (const group of [...GROUPS, ...TEST_GROUPS]) {
       await prisma.group.upsert({
         where: { name: group.name },
         update: { direction: group.direction, year: ENROLLMENT_YEAR },
