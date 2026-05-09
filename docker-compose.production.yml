@@ -39,6 +39,22 @@ services:
     ports:
       - '127.0.0.1:5432:5432'
 
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # Redis наружу из VPS не светим вообще (даже на loopback) — он живёт
+    # только в docker-сети и доступен только бэкенду по hostname `redis:6379`.
+    # AOF-персистенс на случай рестарта (для кеша необязательно, но дёшево).
+    command: ['redis-server', '--appendonly', 'yes']
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
   backend:
     build:
       context: ./back
@@ -47,14 +63,17 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     # env_file пробрасывает все переменные из .env.production внутрь контейнера.
     env_file:
       - .env.production
     environment:
       NODE_ENV: production
-      # DATABASE_URL внутри docker-сети ссылается на сервис `postgres`,
-      # а не на localhost. Перетираем, что бы там ни было в .env.production.
+      # DATABASE_URL и REDIS_URL внутри docker-сети ссылаются на сервисы
+      # по их именам, а не на localhost. Перетираем .env.production.
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379
     # Loopback-публикация для SSH-туннеля и локального дебага.
     # Наружу 5001 НЕ светит — снаружи только Caddy на 80/443.
     ports:
@@ -81,14 +100,18 @@ services:
       # Файлы access-логов (видны на хосте через docker volume inspect)
       - caddy_logs:/var/log/caddy
     healthcheck:
-      test: ['CMD', 'wget', '--quiet', '--tries=1', '--spider', 'http://localhost:2019/']
+      # Проверяем, что Caddy обслуживает 80-й порт (HTTP→HTTPS редирект).
+      # В alpine-образе нет curl, но есть wget из busybox.
+      # Опция --spider запрашивает только заголовки. Любой 2xx/3xx — успех.
+      test: ['CMD', 'wget', '--quiet', '--spider', 'http://localhost/']
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 30s
+      start_period: 60s
 
 volumes:
   postgres_data:
+  redis_data:
   caddy_data:
   caddy_config:
   caddy_logs:

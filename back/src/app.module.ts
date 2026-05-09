@@ -6,6 +6,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
 import { envValidationSchema } from './config/env.validation';
 import { buildLoggerConfig } from './config/logger.config';
+import { buildCacheModule } from './config/cache.config';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { GroupsModule } from './groups/groups.module';
@@ -37,6 +38,10 @@ import { HealthModule } from './health/health.module';
     // dependency-injected ILogger пишут через него. HTTP-запросы логируются
     // автоматически (см. logger.config.ts).
     LoggerModule.forRoot(buildLoggerConfig(process.env)),
+    // Глобальный кеш — Redis в проде, in-memory локально.
+    // Используется через @UseInterceptors(CacheInterceptor) на горячих
+    // GET-эндпоинтах (см. LeaderboardController).
+    buildCacheModule(),
     ScheduleModule.forRoot(),
     // Глобальный rate-limiter. Применяется ко всем маршрутам через
     // APP_GUARD ниже. Конкретные роуты могут переопределить лимит

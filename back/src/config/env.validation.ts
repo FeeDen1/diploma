@@ -69,4 +69,13 @@ export const envValidationSchema = Joi.object({
     .default('https://exp.host/--/api/v2/push/send'),
   // Не обязателен, но без него Expo может рейт-лимитить чаще.
   EXPO_ACCESS_TOKEN: Joi.string().allow('').optional(),
+
+  // ── Redis (кеш) ──────────────────────────────────────────────
+  // Если REDIS_URL не задан — CacheModule переходит на in-memory cache
+  // внутри процесса. Для прод-сборки (docker compose) задаётся как
+  // redis://redis:6379. Для локалки можно не задавать — cache всё равно
+  // работает, просто без распределённости.
+  REDIS_URL: Joi.string()
+    .uri({ scheme: ['redis', 'rediss'] })
+    .optional(),
 });
