@@ -17,8 +17,13 @@ WORKDIR /app
 
 # Сначала только манифесты — кеш слоя инвалидируется только при изменении
 # package.json / package-lock.json, а не каждой правки исходника.
+#
+# --legacy-peer-deps: транзитивные peer-deps (типа keyv@4 от eslint-цепочки)
+# конфликтуют с runtime-зависимостями нашего @keyv/redis@5. Они на runtime
+# не пересекаются — eslint живёт только в dev. Флаг отключает строгую
+# проверку peer-deps, как было в npm 6.
 COPY package.json package-lock.json ./
-RUN npm ci --ignore-scripts
+RUN npm ci --ignore-scripts --legacy-peer-deps
 
 # ------------------------------------------------------------------
 # 2) builder

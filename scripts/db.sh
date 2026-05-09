@@ -5,6 +5,7 @@
 # Подкоманды:
 #   shell                  — psql shell внутри контейнера на сервере
 #   studio                 — Prisma Studio локально + SSH-туннель к prod-БД
+#   seed                   — прогон prisma/seed.ts (создаёт/обновляет группы)
 #   make-admin <email>     — одной командой повысить юзера до admin
 #   list-users             — табличка email/role/createdAt
 #   backup                 — pg_dump → ./backups/pmtask-YYYYMMDD-HHMM.sql
@@ -103,6 +104,15 @@ cmd_studio() {
     DATABASE_URL="$db_url" npx prisma studio
 }
 
+cmd_seed() {
+    step "Прогон prisma/seed.ts на prod-БД"
+    # Сид собран в dist/ ещё на этапе docker build (npm run build).
+    # Прогоняем уже собранный JS — не нужен ts-node в рантайме контейнера.
+    # DATABASE_URL уже выставлен в backend-контейнере через env_file.
+    docker_exec backend node dist/prisma/seed.js
+    ok "seed готов"
+}
+
 cmd_make_admin() {
     local email="${1:-}"
     [[ -n "$email" ]] || fail "usage: $0 make-admin <email>"
@@ -170,6 +180,7 @@ cmd_reset() {
 case "${1:-}" in
     shell)        cmd_shell ;;
     studio)       cmd_studio ;;
+    seed)         cmd_seed ;;
     make-admin)   shift; cmd_make_admin "$@" ;;
     list-users)   cmd_list_users ;;
     backup)       cmd_backup ;;
@@ -180,6 +191,7 @@ case "${1:-}" in
 Использование:
   $0 shell                       — psql shell в prod-БД
   $0 studio                      — Prisma Studio через SSH-туннель
+  $0 seed                        — прогон prisma/seed.ts (группы)
   $0 make-admin <email>          — повысить юзера до admin
   $0 list-users                  — список юзеров (email/role/createdAt)
   $0 backup                      — pg_dump → ./backups/pmtask-YYYYMMDD-HHMM.sql

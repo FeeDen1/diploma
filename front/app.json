@@ -60,7 +60,18 @@
       ]
     ],
     "extra": {
-      "apiBaseUrl": "https://api.spbu-pmi.ru/api"
+      "apiBaseUrl": "https://api.spbu-pmi.ru/api",
+      "router": {},
+      "eas": {
+        "projectId": "783a3b7c-5bf2-4627-8c8e-0935c21c319a"
+      }
+    },
+    "owner": "denis1231",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/783a3b7c-5bf2-4627-8c8e-0935c21c319a"
     }
   }
 }
