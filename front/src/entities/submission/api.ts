@@ -169,6 +169,10 @@ export function useDeleteMySubmission(): UseMutationResult<void, unknown, string
           query.queryKey[0] === 'groups' &&
           query.queryKey[2] === 'students-progress',
       });
+      // Если удаляемая сдача была в статусе approved, бэк откатывает
+      // ratingTotal — обновляем баланс и лидерборд.
+      qc.invalidateQueries({ queryKey: queryKeys.auth.me });
+      qc.invalidateQueries({ queryKey: ['leaderboard'] });
     },
   });
 }
@@ -201,6 +205,13 @@ export function useChangeSubmissionStatus(): UseMutationResult<
           query.queryKey[2] === 'students-progress',
       });
       qc.invalidateQueries({ queryKey: ['leaderboard'] });
+      // Approve/reject меняет ratingTotal автора сабмита. На бэке это атомарная
+      // операция; на фронте мы не знаем, чей баланс отображается в текущей
+      // сессии (одобряющий админ или оцениваемый студент могут совпасть, если
+      // юзер тестит как оба). Поэтому всегда инвалидируем auth.me — на проде
+      // это no-op (304 от бэка благодаря ETag), а в dev-сценарии «один юзер»
+      // заставляет профиль и магазин обновить отображаемый баланс.
+      qc.invalidateQueries({ queryKey: queryKeys.auth.me });
     },
   });
 }
