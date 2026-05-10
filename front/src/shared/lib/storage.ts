@@ -1,4 +1,20 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
+
+/**
+ * Хранилище приложения. Разделено по чувствительности данных:
+ *
+ *   SecureStore — для секретов: access/refresh JWT-токены. Шифруется через
+ *     Android Keystore / iOS Keychain. Переживает переустановку приложения
+ *     с тем же bundleId — это нормально для токенов, но плохо для UX-флагов
+ *     типа «онбординг показан»: пользователь, удаливший и переустановивший
+ *     приложение, ожидает увидеть онбординг заново.
+ *
+ *   AsyncStorage — для UX-флагов и предпочтений (тема, статус онбординга,
+ *     профиль настроен). Очищается при удалении приложения и при «Очистить
+ *     данные» в настройках Android — это правильное поведение для не-секретных
+ *     данных, привязанных к конкретной установке.
+ */
 
 const KEYS = {
   ACCESS_TOKEN: 'access_token',
@@ -11,6 +27,7 @@ const KEYS = {
 export type StoredThemeMode = 'light' | 'dark';
 
 export const storage = {
+  // ── Токены: SecureStore (нужно шифрование) ────────────────────────────────
   async getAccessToken(): Promise<string | null> {
     return SecureStore.getItemAsync(KEYS.ACCESS_TOKEN);
   },
@@ -41,36 +58,41 @@ export const storage = {
     ]);
   },
 
+  // ── UX-флаги: AsyncStorage (без шифрования, очищается с приложением) ──────
   async isOnboardingCompleted(): Promise<boolean> {
-    const value = await SecureStore.getItemAsync(KEYS.ONBOARDING_COMPLETED);
+    const value = await AsyncStorage.getItem(KEYS.ONBOARDING_COMPLETED);
     return value === 'true';
   },
 
   async setOnboardingCompleted(): Promise<void> {
-    await SecureStore.setItemAsync(KEYS.ONBOARDING_COMPLETED, 'true');
+    await AsyncStorage.setItem(KEYS.ONBOARDING_COMPLETED, 'true');
   },
 
   async isProfileSetupCompleted(): Promise<boolean> {
-    const value = await SecureStore.getItemAsync(KEYS.PROFILE_SETUP_COMPLETED);
+    const value = await AsyncStorage.getItem(KEYS.PROFILE_SETUP_COMPLETED);
     return value === 'true';
   },
 
   async setProfileSetupCompleted(): Promise<void> {
-    await SecureStore.setItemAsync(KEYS.PROFILE_SETUP_COMPLETED, 'true');
+    await AsyncStorage.setItem(KEYS.PROFILE_SETUP_COMPLETED, 'true');
   },
 
   async getThemeMode(): Promise<StoredThemeMode | null> {
-    const raw = await SecureStore.getItemAsync(KEYS.THEME_MODE);
+    const raw = await AsyncStorage.getItem(KEYS.THEME_MODE);
     return raw === 'light' || raw === 'dark' ? raw : null;
   },
 
   async setThemeMode(mode: StoredThemeMode): Promise<void> {
-    await SecureStore.setItemAsync(KEYS.THEME_MODE, mode);
+    await AsyncStorage.setItem(KEYS.THEME_MODE, mode);
   },
 
   async clearAll(): Promise<void> {
-    await Promise.all(
-      Object.values(KEYS).map((key) => SecureStore.deleteItemAsync(key)),
-    );
+    await Promise.all([
+      SecureStore.deleteItemAsync(KEYS.ACCESS_TOKEN),
+      SecureStore.deleteItemAsync(KEYS.REFRESH_TOKEN),
+      AsyncStorage.removeItem(KEYS.ONBOARDING_COMPLETED),
+      AsyncStorage.removeItem(KEYS.PROFILE_SETUP_COMPLETED),
+      AsyncStorage.removeItem(KEYS.THEME_MODE),
+    ]);
   },
 };
