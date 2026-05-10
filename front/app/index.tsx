@@ -53,11 +53,21 @@ export default function IndexScreen(): React.ReactElement | null {
       return '/(tabs)/achievements';
     }
 
+    const startedAt = Date.now();
+    // eslint-disable-next-line no-console
+    console.log('[bootstrap] start');
+
     decide()
       .then((next) => {
+        // eslint-disable-next-line no-console
+        console.log(
+          `[bootstrap] decided ${next} in ${Date.now() - startedAt}ms`,
+        );
         if (mounted) setTarget(next);
       })
-      .catch(() => {
+      .catch((error) => {
+        // eslint-disable-next-line no-console
+        console.warn('[bootstrap] error', error);
         if (mounted) setTarget('/(auth)/login');
       })
       .finally(() => {
