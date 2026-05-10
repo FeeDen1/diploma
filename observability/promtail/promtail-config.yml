@@ -1,0 +1,93 @@
+# Promtail — агент сбора логов.
+#
+# Читает docker json-file логи из /var/lib/docker/containers (стандартное
+# место куда docker пишет stdout/stderr контейнеров), парсит наши Pino-логи
+# (которые JSON), извлекает поля level/context как Loki-labels — это потом
+# даёт быстрый фильтр в Grafana без полнотекстового поиска.
+
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+# Loki, куда пушим. Внутри docker-сети — по hostname сервиса.
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+# Promtail сохраняет позицию в каждом файле, чтобы при рестарте не читать
+# с самого начала. Это критично — без positions при каждом редеплое мы бы
+# заново парсили все docker-логи и слали дубликаты в Loki.
+positions:
+  filename: /tmp/positions.yaml
+
+scrape_configs:
+  # Один scrape для всех docker-контейнеров. Имя контейнера и compose-сервис
+  # вытаскиваются из лейблов docker и кладутся как Loki-labels.
+  - job_name: docker-containers
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+
+    relabel_configs:
+      # Имя контейнера ("pmtask-backend-1", etc) — основной фильтр
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)'
+        target_label: container
+
+      # Имя compose-сервиса (backend / postgres / caddy) — удобный логический фильтр
+      - source_labels: ['__meta_docker_container_label_com_docker_compose_service']
+        target_label: service
+
+      # Имя compose-проекта (pmtask) — если когда-нибудь будет несколько проектов на VPS
+      - source_labels: ['__meta_docker_container_label_com_docker_compose_project']
+        target_label: project
+
+    pipeline_stages:
+      # 1. Docker json-file пишет каждую строку как JSON-объект
+      #    {"log":"<содержимое>","stream":"stdout","time":"..."}
+      #    Вытаскиваем именно поле log в дальнейшую обработку.
+      - json:
+          expressions:
+            output: log
+            stream: stream
+            timestamp: time
+
+      - timestamp:
+          source: timestamp
+          format: RFC3339Nano
+
+      - labels:
+          stream: # stdout / stderr — пригодится отличить error-выводы
+
+      - output:
+          source: output
+
+      # 2. Если содержимое — снова JSON (наш Pino), парсим уровень логирования.
+      #    Если не JSON (например, миграции Prisma, npm output) — стейдж
+      #    тихо пропускает и строка идёт без level-label.
+      - json:
+          expressions:
+            level: level
+            context: context
+            msg: msg
+
+      # 3. Pino пишет уровни как числа: 10=trace, 20=debug, 30=info, 40=warn,
+      #    50=error, 60=fatal. Конвертируем в строковую метку — это то, что
+      #    юзер ожидает видеть в Grafana ("error" вместо "50").
+      - template:
+          source: level
+          template: |
+            {{- if eq .Value "60" -}}fatal
+            {{- else if eq .Value "50" -}}error
+            {{- else if eq .Value "40" -}}warn
+            {{- else if eq .Value "30" -}}info
+            {{- else if eq .Value "20" -}}debug
+            {{- else if eq .Value "10" -}}trace
+            {{- else -}}unknown
+            {{- end -}}
+
+      - labels:
+          level:
+          # context (= имя NestJS-модуля: "RoutesResolver", "InstanceLoader",
+          # "AuthService") — НЕ кладём в labels: cardinality высокая,
+          # пользователь NestJS-модулей много, индексы Loki распухнут.
+          # context остаётся доступен для парсинга через `| json` в LogQL.
