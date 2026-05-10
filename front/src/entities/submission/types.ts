@@ -1,5 +1,5 @@
-import type { SubmissionStatus } from '../../shared/api/submissions';
-import type { TaskCategory } from '../../shared/api/tasks';
+import type { SubmissionStatus } from '@shared/api/submissions';
+import type { TaskCategory } from '@shared/api/tasks';
 
 /** Полная сдача — для куратора/админа */
 export interface Submission {

@@ -6,13 +6,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Badge } from '../../../shared/ui/Badge';
-import { Card } from '../../../shared/ui/Card';
-import { EmptyState } from '../../../shared/ui/EmptyState';
-import { SearchBar } from '../../../shared/ui/SearchBar';
-import { AlbumsIcon } from '../../../shared/ui/icons';
-import { useUsers, type User } from '../../../entities/user';
-import { AdapterAssignSheet } from '../../../features/admin';
+import { Badge } from '@shared/ui/Badge';
+import { Card } from '@shared/ui/Card';
+import { EmptyState } from '@shared/ui/EmptyState';
+import { SearchBar } from '@shared/ui/SearchBar';
+import { AlbumsIcon } from '@shared/ui/icons';
+import { useUsers, type User } from '@entities/user';
+import { AdapterAssignSheet } from '@features/admin';
 
 /**
  * Виджет управления кураторами. Композирует:

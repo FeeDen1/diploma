@@ -1,6 +1,6 @@
 import React from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LoginForm } from '../../src/features/auth';
+import { LoginForm } from '@features/auth';
 
 export default function LoginScreen() {
   return (

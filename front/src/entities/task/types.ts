@@ -1,4 +1,4 @@
-import type { TaskCategory, TaskType } from '../../shared/api/tasks';
+import type { TaskCategory, TaskType } from '@shared/api/tasks';
 
 export interface Task {
   id: string;

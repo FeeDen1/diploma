@@ -8,12 +8,12 @@ import {
   View,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { Button } from '../../../shared/ui/Button';
-import { CameraIcon, CloseIcon } from '../../../shared/ui/icons';
-import { useToast } from '../../../shared/ui';
-import { TASK_CATEGORY_LABELS } from '../../../shared/api/tasks';
-import { extractErrorMessage } from '../../../shared/api';
-import { prepareImageForUpload } from '../../../shared/lib/prepare-image';
+import { Button } from '@shared/ui/Button';
+import { CameraIcon, CloseIcon } from '@shared/ui/icons';
+import { useToast } from '@shared/ui';
+import { TASK_CATEGORY_LABELS } from '@shared/api/tasks';
+import { extractErrorMessage } from '@shared/api';
+import { prepareImageForUpload } from '@shared/lib/prepare-image';
 import {
   formatDeadline,
   getDeadlineSeverity,
@@ -22,7 +22,7 @@ import {
 import {
   useCreateSubmission,
   useReplaceMySubmissionFile,
-} from '../../../entities/submission';
+} from '@entities/submission';
 import type { AchievementView } from '../lib/useAchievementsView';
 
 const DEADLINE_TEXT_CLASS: Record<DeadlineSeverity, string> = {

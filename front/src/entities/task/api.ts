@@ -8,14 +8,14 @@ import {
   type UseQueryResult,
   type InfiniteData,
 } from '@tanstack/react-query';
-import { queryKeys } from '../../shared/api';
+import { queryKeys } from '@shared/api';
 import {
   tasksApi,
   type CreateTaskDto,
   type ListTasksQuery,
   type PaginatedTasksDto,
   type UpdateTaskDto,
-} from '../../shared/api/tasks';
+} from '@shared/api/tasks';
 import { toTaskDomain } from './mappers';
 import type { Task } from './types';
 

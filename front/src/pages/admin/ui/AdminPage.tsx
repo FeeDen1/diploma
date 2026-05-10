@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { View } from 'react-native';
-import { SubTabButton, TabButton } from '../../../shared/ui';
-import { AddRewardForm, AddTaskForm } from '../../../features/admin';
-import { AdminTasksList } from '../../../widgets/admin-tasks';
-import { AdminRewardsList } from '../../../widgets/admin-rewards';
-import { ManageAdapters } from '../../../widgets/manage-adapters';
+import { SubTabButton, TabButton } from '@shared/ui';
+import { AddRewardForm, AddTaskForm } from '@features/admin';
+import { AdminTasksList } from '@widgets/admin-tasks';
+import { AdminRewardsList } from '@widgets/admin-rewards';
+import { ManageAdapters } from '@widgets/manage-adapters';
 
 type AdminTab = 'tasks' | 'rewards' | 'adapters';
 type TasksSubTab = 'list' | 'create';

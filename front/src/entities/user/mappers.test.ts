@@ -1,5 +1,5 @@
 import { toUserDomain } from './mappers';
-import type { ReadUserDto } from '../../shared/api/users';
+import type { ReadUserDto } from '@shared/api/users';
 
 const baseDto: ReadUserDto = {
   id: 'u1',

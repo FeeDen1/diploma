@@ -1,7 +1,7 @@
 import type {
   MySubmissionDto,
   ReadSubmissionDto,
-} from '../../shared/api/submissions';
+} from '@shared/api/submissions';
 import type { MySubmission, Submission } from './types';
 
 export function toSubmissionDomain(dto: ReadSubmissionDto): Submission {

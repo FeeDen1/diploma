@@ -1,4 +1,4 @@
-import type { ReadUserDto } from '../../shared/api/users';
+import type { ReadUserDto } from '@shared/api/users';
 import type { User } from './types';
 
 export function toUserDomain(dto: ReadUserDto): User {

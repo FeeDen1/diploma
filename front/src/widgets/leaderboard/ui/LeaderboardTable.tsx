@@ -7,17 +7,17 @@ import {
   type PaginationState,
   type SortingState,
 } from '@tanstack/react-table';
-import { Avatar } from '../../../shared/ui/Avatar';
-import { EmptyState } from '../../../shared/ui/EmptyState';
-import { PodiumIcon } from '../../../shared/ui/icons';
-import { DIRECTION_LABELS } from '../../../shared/api/groups';
-import type { Direction } from '../../../shared/api/groups';
-import { type LeaderboardSort } from '../../../shared/api/leaderboard';
+import { Avatar } from '@shared/ui/Avatar';
+import { EmptyState } from '@shared/ui/EmptyState';
+import { PodiumIcon } from '@shared/ui/icons';
+import { DIRECTION_LABELS } from '@shared/api/groups';
+import type { Direction } from '@shared/api/groups';
+import { type LeaderboardSort } from '@shared/api/leaderboard';
 import {
   useLeaderboard,
   type LeaderboardEntry,
-} from '../../../entities/leaderboard';
-import { LeaderboardFilters } from '../../../features/leaderboard';
+} from '@entities/leaderboard';
+import { LeaderboardFilters } from '@features/leaderboard';
 
 const PAGE_SIZE = 20;
 

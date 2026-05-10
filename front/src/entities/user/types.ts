@@ -1,4 +1,4 @@
-import type { UserRole, UserStatus } from '../../shared/api/users';
+import type { UserRole, UserStatus } from '@shared/api/users';
 
 export interface User {
   id: string;

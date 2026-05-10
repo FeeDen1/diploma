@@ -1,7 +1,7 @@
-import { useConfirm, useToast } from '../../../shared/ui';
-import { extractErrorMessage } from '../../../shared/api';
-import { useMe } from '../../../entities/user';
-import { useRedeemReward, type Reward } from '../../../entities/reward';
+import { useConfirm, useToast } from '@shared/ui';
+import { extractErrorMessage } from '@shared/api';
+import { useMe } from '@entities/user';
+import { useRedeemReward, type Reward } from '@entities/reward';
 
 interface UseRewardPurchaseResult {
   buy: (reward: Reward) => Promise<void>;

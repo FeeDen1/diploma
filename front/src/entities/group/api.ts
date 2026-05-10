@@ -5,14 +5,14 @@ import {
   type UseMutationResult,
   type UseQueryResult,
 } from '@tanstack/react-query';
-import { queryKeys } from '../../shared/api';
+import { queryKeys } from '@shared/api';
 import {
   groupsApi,
   type CreateGroupDto,
   type GroupsListFilters,
   type UpdateGroupDto,
 } from '@shared/api/groups';
-import { usersApi } from '../../shared/api/users';
+import { usersApi } from '@shared/api/users';
 import { toGroupDetailDomain, toGroupDomain } from './mappers';
 import type { Group, GroupDetail } from './types';
 

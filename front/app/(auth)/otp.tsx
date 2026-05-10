@@ -2,7 +2,7 @@ import React from 'react';
 import { Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
-import { OtpForm } from '../../src/features/auth';
+import { OtpForm } from '@features/auth';
 
 export default function OtpScreen(): React.ReactElement {
   const { email } = useLocalSearchParams<{ email?: string }>();

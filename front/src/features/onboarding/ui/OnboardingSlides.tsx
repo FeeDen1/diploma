@@ -9,14 +9,14 @@ import {
   type NativeSyntheticEvent,
 } from 'react-native';
 import { router } from 'expo-router';
-import { Button } from '../../../shared/ui/Button';
+import { Button } from '@shared/ui/Button';
 import {
   PodiumIcon,
   SchoolIcon,
   TrophyIcon,
   type IconProps,
-} from '../../../shared/ui/icons';
-import { storage } from '../../../shared/lib/storage';
+} from '@shared/ui/icons';
+import { storage } from '@shared/lib/storage';
 
 const { width } = Dimensions.get('window');
 

@@ -1,7 +1,7 @@
 import type {
   LeaderboardEntryDto,
   LeaderboardResponseDto,
-} from '../../shared/api/leaderboard';
+} from '@shared/api/leaderboard';
 import type { LeaderboardData, LeaderboardEntry } from './types';
 
 export function toLeaderboardEntry(dto: LeaderboardEntryDto): LeaderboardEntry {

@@ -5,12 +5,12 @@ import {
   Text,
   View,
 } from 'react-native';
-import { EmptyState } from '../../../shared/ui/EmptyState';
-import { TrophyIcon } from '../../../shared/ui/icons';
-import { useMe } from '../../../entities/user';
-import { useRewards, type Reward } from '../../../entities/reward';
-import { RewardCard } from '../../../features/store/ui/RewardCard';
-import { useRewardPurchase } from '../../../features/store/lib/useRewardPurchase';
+import { EmptyState } from '@shared/ui/EmptyState';
+import { TrophyIcon } from '@shared/ui/icons';
+import { useMe } from '@entities/user';
+import { useRewards, type Reward } from '@entities/reward';
+import { RewardCard } from '@features/store/ui/RewardCard';
+import { useRewardPurchase } from '@features/store/lib/useRewardPurchase';
 
 /**
  * Страница магазина. Сетка лотов 2 колонки, тап → подтверждение покупки

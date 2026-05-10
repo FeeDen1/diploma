@@ -6,15 +6,15 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Avatar } from '../../../shared/ui/Avatar';
-import { Badge } from '../../../shared/ui/Badge';
-import { Card } from '../../../shared/ui/Card';
-import { EmptyState } from '../../../shared/ui/EmptyState';
-import { AlbumsIcon, ChevronForwardIcon } from '../../../shared/ui/icons';
+import { Avatar } from '@shared/ui/Avatar';
+import { Badge } from '@shared/ui/Badge';
+import { Card } from '@shared/ui/Card';
+import { EmptyState } from '@shared/ui/EmptyState';
+import { AlbumsIcon, ChevronForwardIcon } from '@shared/ui/icons';
 import {
   useStudentsProgress,
   type StudentProgressItem,
-} from '../../../entities/group';
+} from '@entities/group';
 
 interface Props {
   groupId: string;

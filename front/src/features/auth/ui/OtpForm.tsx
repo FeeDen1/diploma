@@ -7,10 +7,10 @@ import {
   View,
 } from 'react-native';
 import { router } from 'expo-router';
-import { Button } from '../../../shared/ui/Button';
-import { Input } from '../../../shared/ui/Input';
-import { useToast } from '../../../shared/ui';
-import { extractErrorMessage } from '../../../shared/api';
+import { Button } from '@shared/ui/Button';
+import { Input } from '@shared/ui/Input';
+import { useToast } from '@shared/ui';
+import { extractErrorMessage } from '@shared/api';
 import { useResendOtp, useVerifyOtp } from '../lib/useAuth';
 
 const RESEND_COOLDOWN = 60; // секунд

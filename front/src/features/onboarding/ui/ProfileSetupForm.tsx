@@ -9,16 +9,16 @@ import {
   View,
 } from 'react-native';
 import { router } from 'expo-router';
-import { Button } from '../../../shared/ui/Button';
-import { extractErrorMessage } from '../../../shared/api';
-import { storage } from '../../../shared/lib/storage';
+import { Button } from '@shared/ui/Button';
+import { extractErrorMessage } from '@shared/api';
+import { storage } from '@shared/lib/storage';
 import {
   DIRECTIONS,
   DIRECTION_LABELS,
   type Direction,
-} from '../../../shared/api/groups';
-import { useGroups, useJoinGroup } from '../../../entities/group';
-import { useMe } from '../../../entities/user';
+} from '@shared/api/groups';
+import { useGroups, useJoinGroup } from '@entities/group';
+import { useMe } from '@entities/user';
 
 export function ProfileSetupForm(): React.ReactElement {
   const [direction, setDirection] = useState<Direction | null>(null);

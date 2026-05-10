@@ -6,14 +6,14 @@ import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persi
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { queryClient } from '../src/shared/api/query-client';
-import { setUnauthorizedHandler } from '../src/shared/api';
-import { ThemeProvider, useTheme } from '../src/shared/theme';
-import { DialogProvider, ToastProvider } from '../src/shared/ui';
+import { queryClient } from '@shared/api/query-client';
+import { setUnauthorizedHandler } from '@shared/api';
+import { ThemeProvider, useTheme } from '@shared/theme';
+import { DialogProvider, ToastProvider } from '@shared/ui';
 import {
   usePushTokenSync,
   useNotificationRouting,
-} from '../src/features/push-notifications';
+} from '@features/push-notifications';
 
 /**
  * Persister TanStack Query для офлайн-режима: сериализует кэш в AsyncStorage,

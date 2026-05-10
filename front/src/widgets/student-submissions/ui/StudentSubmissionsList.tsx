@@ -1,18 +1,18 @@
 import React from 'react';
 import { ActivityIndicator, FlatList, Image, Text, View } from 'react-native';
-import { Badge } from '../../../shared/ui/Badge';
-import { Button } from '../../../shared/ui/Button';
-import { Card } from '../../../shared/ui/Card';
-import { EmptyState } from '../../../shared/ui/EmptyState';
-import { AlbumsIcon } from '../../../shared/ui/icons';
-import { useToast } from '../../../shared/ui';
-import { extractErrorMessage } from '../../../shared/api';
-import { TASK_CATEGORY_LABELS } from '../../../shared/api/tasks';
+import { Badge } from '@shared/ui/Badge';
+import { Button } from '@shared/ui/Button';
+import { Card } from '@shared/ui/Card';
+import { EmptyState } from '@shared/ui/EmptyState';
+import { AlbumsIcon } from '@shared/ui/icons';
+import { useToast } from '@shared/ui';
+import { extractErrorMessage } from '@shared/api';
+import { TASK_CATEGORY_LABELS } from '@shared/api/tasks';
 import {
   useChangeSubmissionStatus,
   useSubmissionsByStudent,
   type Submission,
-} from '../../../entities/submission';
+} from '@entities/submission';
 
 interface Props {
   studentId: string;

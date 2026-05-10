@@ -4,10 +4,10 @@ import {
   isOtpPendingResponse,
   type AuthResponseDto,
   type OtpPendingDto,
-} from '../../../shared/api/auth';
-import { usersApi } from '../../../shared/api/users';
-import { queryKeys } from '../../../shared/api';
-import { storage } from '../../../shared/lib/storage';
+} from '@shared/api/auth';
+import { usersApi } from '@shared/api/users';
+import { queryKeys } from '@shared/api';
+import { storage } from '@shared/lib/storage';
 
 interface LoginInput {
   email: string;

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useMe } from '../../../entities/user';
+import { useMe } from '@entities/user';
 import {
   registerDeviceToken,
   unregisterDeviceToken,

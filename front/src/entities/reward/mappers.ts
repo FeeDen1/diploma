@@ -1,7 +1,7 @@
 import type {
   ReadRedemptionDto,
   ReadRewardDto,
-} from '../../shared/api/rewards';
+} from '@shared/api/rewards';
 import type { Reward, RewardOrder } from './types';
 
 export function toRewardDomain(dto: ReadRewardDto): Reward {

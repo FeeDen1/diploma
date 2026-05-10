@@ -5,8 +5,8 @@ import {
   type UseMutationResult,
   type UseQueryResult,
 } from '@tanstack/react-query';
-import { queryKeys } from '../../shared/api';
-import { usersApi, type UserRole } from '../../shared/api/users';
+import { queryKeys } from '@shared/api';
+import { usersApi, type UserRole } from '@shared/api/users';
 import { toGroupDomain } from '../group/mappers';
 import type { Group } from '../group/types';
 import { toUserDomain } from './mappers';

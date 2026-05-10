@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 import { ActivityIndicator, FlatList, View } from 'react-native';
-import { EmptyState } from '../../../shared/ui/EmptyState';
-import { TrophyIcon } from '../../../shared/ui/icons';
-import type { TaskCategory, TasksSort } from '../../../shared/api/tasks';
+import { EmptyState } from '@shared/ui/EmptyState';
+import { TrophyIcon } from '@shared/ui/icons';
+import type { TaskCategory, TasksSort } from '@shared/api/tasks';
 import {
   useAchievementsView,
   type AchievementView,
-} from '../../../features/achievements/lib/useAchievementsView';
+} from '@features/achievements/lib/useAchievementsView';
 import {
   AchievementCard,
   AchievementFilters,
   SubmitAchievementSheet,
-} from '../../../features/achievements';
+} from '@features/achievements';
 
 /**
  * Лента заданий студента — виджет, композирующий несколько features:

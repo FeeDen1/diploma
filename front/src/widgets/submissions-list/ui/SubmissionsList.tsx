@@ -1,17 +1,17 @@
 import React from 'react';
 import { ActivityIndicator, FlatList, Image, Text, View } from 'react-native';
-import { Avatar } from '../../../shared/ui/Avatar';
-import { Badge } from '../../../shared/ui/Badge';
-import { Button } from '../../../shared/ui/Button';
-import { Card } from '../../../shared/ui/Card';
-import { EmptyState } from '../../../shared/ui/EmptyState';
-import { AlbumsIcon } from '../../../shared/ui/icons';
-import { extractErrorMessage } from '../../../shared/api';
+import { Avatar } from '@shared/ui/Avatar';
+import { Badge } from '@shared/ui/Badge';
+import { Button } from '@shared/ui/Button';
+import { Card } from '@shared/ui/Card';
+import { EmptyState } from '@shared/ui/EmptyState';
+import { AlbumsIcon } from '@shared/ui/icons';
+import { extractErrorMessage } from '@shared/api';
 import {
   useChangeSubmissionStatus,
   useSubmissionsByTask,
   type Submission,
-} from '../../../entities/submission';
+} from '@entities/submission';
 
 interface Props {
   taskId: string;

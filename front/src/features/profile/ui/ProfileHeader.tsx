@@ -1,15 +1,15 @@
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { Avatar } from '../../../shared/ui/Avatar';
-import { CameraIcon } from '../../../shared/ui/icons';
-import { useAlert } from '../../../shared/ui';
-import { extractErrorMessage } from '../../../shared/api';
-import { prepareImageForUpload } from '../../../shared/lib/prepare-image';
-import { filesApi } from '../../../shared/api/files';
-import { DIRECTION_LABELS } from '../../../shared/api/groups';
-import { useSetMyAvatar, type User } from '../../../entities/user';
-import { useMyGroups } from '../../../entities/group';
+import { Avatar } from '@shared/ui/Avatar';
+import { CameraIcon } from '@shared/ui/icons';
+import { useAlert } from '@shared/ui';
+import { extractErrorMessage } from '@shared/api';
+import { prepareImageForUpload } from '@shared/lib/prepare-image';
+import { filesApi } from '@shared/api/files';
+import { DIRECTION_LABELS } from '@shared/api/groups';
+import { useSetMyAvatar, type User } from '@entities/user';
+import { useMyGroups } from '@entities/group';
 
 interface Props {
   user: User;

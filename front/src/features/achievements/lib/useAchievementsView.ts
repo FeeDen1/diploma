@@ -3,13 +3,13 @@ import {
   flattenInfiniteTasks,
   useInfiniteTasks,
   type Task,
-} from '../../../entities/task';
+} from '@entities/task';
 import {
   useMySubmissions,
   type MySubmission,
   type SubmissionStatus,
-} from '../../../entities/submission';
-import type { TaskCategory, TasksSort } from '../../../shared/api/tasks';
+} from '@entities/submission';
+import type { TaskCategory, TasksSort } from '@shared/api/tasks';
 
 export type AchievementStatus = 'available' | 'pending' | 'approved' | 'rejected';
 

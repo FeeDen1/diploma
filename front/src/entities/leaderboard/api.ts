@@ -3,11 +3,11 @@ import {
   useQuery,
   type UseQueryResult,
 } from '@tanstack/react-query';
-import { queryKeys } from '../../shared/api';
+import { queryKeys } from '@shared/api';
 import {
   leaderboardApi,
   type LeaderboardSort,
-} from '../../shared/api/leaderboard';
+} from '@shared/api/leaderboard';
 import { toLeaderboardDomain } from './mappers';
 import type { LeaderboardData, LeaderboardFilters } from './types';
 

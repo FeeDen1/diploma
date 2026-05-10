@@ -1,5 +1,5 @@
 import React from 'react';
-import { AchievementsPage } from '../../src/pages/achievements';
+import { AchievementsPage } from '@pages/achievements';
 
 export default function AchievementsScreen() {
   return <AchievementsPage />;

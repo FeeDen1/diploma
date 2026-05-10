@@ -1,4 +1,4 @@
-import type { Direction } from '../../shared/api/groups';
+import type { Direction } from '@shared/api/groups';
 import type { User } from '../user/types';
 
 export interface Group {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ProfileSetupForm } from '../../src/features/onboarding';
+import { ProfileSetupForm } from '@features/onboarding';
 
 export default function ProfileSetupScreen() {
   return (

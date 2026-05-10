@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, View } from 'react-native';
-import { Card } from '../../../shared/ui/Card';
+import { Card } from '@shared/ui/Card';
 
 interface Props {
   completed: number;

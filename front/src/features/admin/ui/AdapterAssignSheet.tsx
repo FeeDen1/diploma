@@ -8,22 +8,22 @@ import {
   View,
 } from 'react-native';
 import { isAxiosError } from 'axios';
-import { Button } from '../../../shared/ui/Button';
-import { CloseIcon } from '../../../shared/ui/icons';
-import { useToast } from '../../../shared/ui';
-import { extractErrorMessage } from '../../../shared/api';
-import { DIRECTION_LABELS } from '../../../shared/api/groups';
+import { Button } from '@shared/ui/Button';
+import { CloseIcon } from '@shared/ui/icons';
+import { useToast } from '@shared/ui';
+import { extractErrorMessage } from '@shared/api';
+import { DIRECTION_LABELS } from '@shared/api/groups';
 import {
   useAddGroupAdapter,
   useGroups,
   useRemoveGroupAdapter,
   type Group,
-} from '../../../entities/group';
+} from '@entities/group';
 import {
   useChangeUserRole,
   useCuratedGroups,
   type User,
-} from '../../../entities/user';
+} from '@entities/user';
 
 /**
  * Делаем addAdapter идемпотентным: если бэк отвечает 409 — связка уже есть,

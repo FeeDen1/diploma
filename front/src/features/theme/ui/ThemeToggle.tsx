@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
-import { useTheme } from '../../../shared/theme';
-import { StarIcon } from '../../../shared/ui/icons';
+import { useTheme } from '@shared/theme';
+import { StarIcon } from '@shared/ui/icons';
 
 export function ThemeToggle(): React.ReactElement {
   const { mode, toggle } = useTheme();

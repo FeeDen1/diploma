@@ -7,16 +7,16 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Badge } from '../../../shared/ui/Badge';
-import { Button } from '../../../shared/ui/Button';
-import { Card } from '../../../shared/ui/Card';
-import { EmptyState } from '../../../shared/ui/EmptyState';
-import { ScreenHeader } from '../../../shared/ui/ScreenHeader';
-import { AlbumsIcon } from '../../../shared/ui/icons';
-import { useConfirm, useToast } from '../../../shared/ui';
-import { extractErrorMessage } from '../../../shared/api';
-import { prepareImageForUpload } from '../../../shared/lib/prepare-image';
-import { TASK_CATEGORY_LABELS } from '../../../shared/api/tasks';
+import { Badge } from '@shared/ui/Badge';
+import { Button } from '@shared/ui/Button';
+import { Card } from '@shared/ui/Card';
+import { EmptyState } from '@shared/ui/EmptyState';
+import { ScreenHeader } from '@shared/ui/ScreenHeader';
+import { AlbumsIcon } from '@shared/ui/icons';
+import { useConfirm, useToast } from '@shared/ui';
+import { extractErrorMessage } from '@shared/api';
+import { prepareImageForUpload } from '@shared/lib/prepare-image';
+import { TASK_CATEGORY_LABELS } from '@shared/api/tasks';
 import * as ImagePicker from 'expo-image-picker';
 import {
   useDeleteMySubmission,
@@ -24,7 +24,7 @@ import {
   useReplaceMySubmissionFile,
   type MySubmission,
   type SubmissionStatus,
-} from '../../../entities/submission';
+} from '@entities/submission';
 
 const STATUS_BADGE: Record<
   SubmissionStatus,
