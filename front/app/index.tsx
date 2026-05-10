@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { storage } from '@shared/lib/storage';
-import { usersApi } from '@shared/api/users';
 
 /**
  * preventAutoHideAsync вызывается в `app/_layout.tsx` — раньше любого экрана,
@@ -29,14 +28,19 @@ export default function IndexScreen(): null {
           return;
         }
 
-        // Проверяем валидность токена + что профиль существует
-        try {
-          await usersApi.getMe();
-        } catch {
-          await storage.clearTokens();
-          if (mounted) router.replace('/(auth)/login');
-          return;
-        }
+        // Намеренно НЕ дёргаем getMe() здесь:
+        //
+        //  1. Оффлайн: запрос упадёт с network error, и любая реакция в catch
+        //     (clearTokens + redirect на login) будет ложным выкидыванием
+        //     валидного юзера. PersistQueryClient рисует кеш из AsyncStorage —
+        //     приложение должно открыться даже без сети.
+        //  2. Онлайн с протухшим access-токеном: refresh подхватится в axios-
+        //     interceptor (см. setUnauthorizedHandler в `app/_layout.tsx`),
+        //     который сам редиректнет на login, если refresh тоже умер.
+        //
+        // Таким образом, наличие access-токена в SecureStore — единственный
+        // признак «юзер залогинен». Валидность проверит бэк когда дойдут
+        // запросы, а нам тут не нужно блокировать старт ради этой проверки.
 
         const profileDone = await storage.isProfileSetupCompleted();
         if (!profileDone) {
