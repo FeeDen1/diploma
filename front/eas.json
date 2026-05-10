@@ -28,6 +28,16 @@
         "simulator": false
       }
     },
+    "ios-simulator": {
+      "distribution": "internal",
+      "channel": "preview",
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.spbu-pmi.ru/api"
+      },
+      "ios": {
+        "simulator": true
+      }
+    },
     "production": {
       "channel": "production",
       "autoIncrement": true,

@@ -44,15 +44,14 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          # Не задаём passphrase — для CI используется отдельный ключ
-          # без passphrase, защищённый только GitHub-секретами.
-          script_stop: true
-          # Тайм-ауты с запасом: docker pull + build + миграции при первом
+          # Тайм-аут с запасом: docker pull + build + миграции при первом
           # деплое могут занять 2-3 минуты, особенно если меняется image base.
           command_timeout: 10m
           script: |
             set -euo pipefail
             cd /opt/pmtask
+
+            COMPOSE="docker compose --env-file .env.production -f docker-compose.production.yml"
 
             echo "▶ Обновляю код"
             git fetch origin main
@@ -60,26 +59,24 @@ jobs:
             echo "  HEAD = $(git rev-parse --short HEAD)"
 
             echo "▶ docker compose up --build -d"
-            docker compose --env-file .env.production \
-              -f docker-compose.production.yml up --build -d
+            $COMPOSE up --build -d
 
-            echo "▶ Жду пока backend станет healthy (до 90 сек)"
-            for i in {1..18}; do
-              status=$(docker inspect --format='{{.State.Health.Status}}' diploma-backend-1 2>/dev/null || echo unknown)
-              if [ "$status" = "healthy" ]; then
-                echo "  backend healthy"
-                break
+            # Проверяем готовность через curl на /api/health, а не через
+            # docker inspect: имя контейнера зависит от имени compose-проекта
+            # (на сервере оно "pmtask-backend-1", не "diploma-backend-1"),
+            # поэтому полагаться на него хрупко. curl универсален и заодно
+            # проверяет, что роутинг nest работает, а не только что контейнер
+            # запустился.
+            echo "▶ Smoke-test /api/health (до 90 сек)"
+            for i in $(seq 1 18); do
+              if curl --fail --silent http://localhost:5001/api/health > /dev/null; then
+                echo "  health endpoint жив"
+                exit 0
               fi
               if [ "$i" = "18" ]; then
-                echo "  ✗ backend не стал healthy за 90 сек"
-                docker compose --env-file .env.production \
-                  -f docker-compose.production.yml logs --tail 50 backend
+                echo "  ✗ health endpoint не ответил за 90 сек"
+                $COMPOSE logs --tail 50 backend
                 exit 1
               fi
               sleep 5
             done
-
-            echo "▶ Smoke-test /api/health через localhost"
-            curl --fail --silent --show-error \
-              http://localhost:5001/api/health > /dev/null
-            echo "  health endpoint жив"

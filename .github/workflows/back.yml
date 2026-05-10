@@ -13,14 +13,17 @@ on:
       - 'docker-compose.production.yml'
       - 'Caddyfile'
       - 'scripts/deploy.sh'
-      - '.github/workflows/back.yml'
+      # Любая правка любого workflow триггерит Back CI — это даёт цепочку
+      # back-ci → deploy для исправлений в deploy.yml/back.yml без необходимости
+      # запускать Deploy руками через workflow_dispatch.
+      - '.github/workflows/**'
   pull_request:
     paths:
       - 'back/**'
       - 'docker-compose.production.yml'
       - 'Caddyfile'
       - 'scripts/deploy.sh'
-      - '.github/workflows/back.yml'
+      - '.github/workflows/**'
 
 defaults:
   run:
