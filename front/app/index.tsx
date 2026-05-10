@@ -5,16 +5,11 @@ import { storage } from '@shared/lib/storage';
 import { usersApi } from '@shared/api/users';
 
 /**
- * Удерживаем нативный splash-screen, пока bootstrap-эффект не решит, на какой
- * экран вести пользователя. Без этого Expo по дефолту скрывает splash в момент
- * первого render `<Stack />`, и пока асинхронно читается SecureStore, успевают
- * мелькнуть промежуточные экраны (онбординг, индикатор) — отсюда «мерцание».
- *
- * preventAutoHideAsync синхронен по сигнатуре, но возвращает Promise; ошибку
- * глотаем намеренно: если splash уже скрыт системой, повторный preventAutoHide
- * на проде кидает warn — он нам бесполезен.
+ * preventAutoHideAsync вызывается в `app/_layout.tsx` — раньше любого экрана,
+ * чтобы expo-router не успел отрисовать первый по алфавиту route до того как
+ * SecureStore прочитан. Здесь же остаётся только hideAsync в finally — после
+ * того как bootstrap решит, на какой экран вести пользователя.
  */
-void SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 export default function IndexScreen(): null {
   useEffect(() => {
