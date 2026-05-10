@@ -1,14 +1,25 @@
 name: Back CI
 
+# Триггерим:
+#  - на любые правки в `back/`
+#  - на правки prod-инфры (compose, Caddy) — там тоже хочется чтобы CI прошёл
+#    перед тем как deploy.yml пойдёт катить изменения
+#  - на правки самого workflow
 on:
   push:
     branches: [main]
     paths:
       - 'back/**'
+      - 'docker-compose.production.yml'
+      - 'Caddyfile'
+      - 'scripts/deploy.sh'
       - '.github/workflows/back.yml'
   pull_request:
     paths:
       - 'back/**'
+      - 'docker-compose.production.yml'
+      - 'Caddyfile'
+      - 'scripts/deploy.sh'
       - '.github/workflows/back.yml'
 
 defaults:
@@ -23,9 +34,9 @@ jobs:
     env:
       # Заглушки для ConfigService — unit-тесты не ходят ни в БД, ни во внешние сервисы.
       DATABASE_URL: postgresql://ci:ci@localhost:5432/ci_dummy
-      JWT_ACCESS_SECRET: ci-access
+      JWT_ACCESS_SECRET: ci-access-secret-must-be-at-least-32-chars-long
       JWT_ACCESS_EXPIRES_IN: 15m
-      JWT_REFRESH_SECRET: ci-refresh
+      JWT_REFRESH_SECRET: ci-refresh-secret-must-be-at-least-32-chars-long
       JWT_REFRESH_EXPIRES_IN: 30d
       JWT_REFRESH_EXPIRES_DAYS: '30'
       S3_ENDPOINT: http://localhost:9000
@@ -37,14 +48,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Node 22 — выравниваем с node:22-bookworm-slim из Dockerfile,
+      # чтобы CI ловил те же баги что и прод.
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
           cache-dependency-path: back/package-lock.json
 
+      # --legacy-peer-deps: keyv@4 (eslint-цепочка) vs @keyv/redis@5 (runtime)
+      # ровно как в Dockerfile (`npm ci --ignore-scripts --legacy-peer-deps`).
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       - name: Generate Prisma Client
         run: npx prisma generate
