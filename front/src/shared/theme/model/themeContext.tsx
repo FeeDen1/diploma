@@ -18,7 +18,15 @@ interface ThemeContextValue {
   toggle: () => void;
 }
 
-const DEFAULT_MODE: ThemeMode = 'light';
+// Тёмная тема выбрана дефолтом по двум причинам:
+// 1) В splash-screen уже индиго фон #5856D6 — переход на тёмный UI
+//    выглядит плавно, светлый бы создал «вспышку» при первом запуске.
+// 2) Большинство мобильных пользователей сейчас живут в системной dark mode,
+//    open-light приложение в OLED-комнате слепит.
+// Если пользователь переключился руками — переключатель сохраняется в
+// SecureStore (см. setMode), и при следующем запуске мы прочитаем сохранённое
+// значение, а DEFAULT_MODE не используется.
+const DEFAULT_MODE: ThemeMode = 'dark';
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 

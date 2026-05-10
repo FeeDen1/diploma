@@ -1,5 +1,10 @@
 import '../global.css';
-import React, { useEffect } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
 import { Stack, router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
@@ -11,6 +16,7 @@ import { queryClient } from '@shared/api/query-client';
 import { setUnauthorizedHandler } from '@shared/api';
 import { ThemeProvider, useTheme } from '@shared/theme';
 import { DialogProvider, ToastProvider } from '@shared/ui';
+import { storage } from '@shared/lib/storage';
 import {
   usePushTokenSync,
   useNotificationRouting,
@@ -18,16 +24,40 @@ import {
 
 /**
  * Удерживаем нативный splash-screen на ROOT-уровне, до того как expo-router
- * успел смонтировать `<Stack />` и любые экраны под ним. Если делать это
- * только в `app/index.tsx`, между моментом скрытия дефолтного splash'а и
- * выполнением preventAutoHideAsync остаётся узкое окно, в котором роутер
- * может успеть показать первый по алфавиту route (онбординг) — отсюда
- * «мелькание» при каждом запуске.
+ * успел смонтировать `<Stack />` и любые экраны под ним.
  *
- * Hide происходит в `app/index.tsx` после того, как bootstrap решит, на
- * какой экран вести пользователя.
+ * preventAutoHideAsync вызывается на module-level (не в useEffect), чтобы
+ * сработать строго до первого render — иначе expo-router успевает за один кадр
+ * показать любой initial route, прежде чем мы заблокируем splash.
  */
 void SplashScreen.preventAutoHideAsync().catch(() => undefined);
+
+/**
+ * Куда вести пользователя после bootstrap. Список фиксирован, других путей нет.
+ */
+type BootstrapTarget =
+  | '/(onboarding)/welcome'
+  | '/(auth)/login'
+  | '/(onboarding)/setup'
+  | '/(tabs)/achievements';
+
+/**
+ * Контекст с уже принятым решением о маршруте. `null` означает «решение ещё
+ * вычисляется», в этот момент splash должен быть виден, а Stack не смонтирован.
+ *
+ * Этот контекст читается в `app/index.tsx` для рендера <Redirect />.
+ */
+const BootstrapTargetContext = createContext<BootstrapTarget | null>(null);
+
+export function useBootstrapTarget(): BootstrapTarget {
+  const ctx = useContext(BootstrapTargetContext);
+  if (ctx === null) {
+    throw new Error(
+      'useBootstrapTarget вызван до того как RootLayout определил target',
+    );
+  }
+  return ctx;
+}
 
 /**
  * Persister TanStack Query для офлайн-режима: сериализует кэш в AsyncStorage,
@@ -50,7 +80,71 @@ const PERSIST_OPTIONS = {
   buster: 'v1',
 };
 
-export default function RootLayout(): React.ReactElement {
+/**
+ * Bootstrap — асинхронно решает на основе локального состояния (SecureStore),
+ * на какой экран должен попасть пользователь после splash. Не дёргает бэк
+ * специально: см. комментарий ниже про оффлайн.
+ */
+async function decideBootstrapTarget(): Promise<BootstrapTarget> {
+  const onboardingDone = await storage.isOnboardingCompleted();
+  if (!onboardingDone) return '/(onboarding)/welcome';
+
+  const accessToken = await storage.getAccessToken();
+  if (!accessToken) return '/(auth)/login';
+
+  // Намеренно НЕ дёргаем getMe() — иначе оффлайн-юзер был бы выкинут на login
+  // из-за network error. Валидность токена проверит axios-interceptor когда
+  // реальные запросы пойдут (см. setUnauthorizedHandler ниже).
+
+  const profileDone = await storage.isProfileSetupCompleted();
+  if (!profileDone) return '/(onboarding)/setup';
+
+  return '/(tabs)/achievements';
+}
+
+export default function RootLayout(): React.ReactElement | null {
+  // target = null → ничего не рендерим, нативный splash всё ещё виден.
+  // Только после того как target вычислен, монтируем Stack — и в этот же
+  // момент IndexScreen через useBootstrapTarget делает <Redirect />.
+  const [target, setTarget] = useState<BootstrapTarget | null>(null);
+
+  // bootstrap-эффект: один раз при первом mount.
+  useEffect(() => {
+    let mounted = true;
+    decideBootstrapTarget()
+      .then((next) => {
+        if (mounted) setTarget(next);
+      })
+      .catch(() => {
+        if (mounted) setTarget('/(auth)/login');
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // ВАЖНО: hideAsync вызывается ПОСЛЕ того как Stack уже отрендерен
+  // (target !== null), и через два requestAnimationFrame — это даёт
+  // expo-router время:
+  //   1) смонтировать Stack
+  //   2) IndexScreen применил <Redirect href={target} />
+  //   3) Stack коммитит navigate на target route
+  //   4) target route успел отрендериться первым кадром
+  // Если hide делать раньше (в .finally bootstrap), нативный splash
+  // гаснет в момент mounting Stack — и на 1-2 кадра виден initial route,
+  // что и давало мелькание онбординга.
+  useEffect(() => {
+    if (target === null) return;
+    const id1 = requestAnimationFrame(() => {
+      const id2 = requestAnimationFrame(() => {
+        void SplashScreen.hideAsync().catch(() => undefined);
+      });
+      cleanupId = id2;
+    });
+    let cleanupId = id1;
+    return () => cancelAnimationFrame(cleanupId);
+  }, [target]);
+
   useEffect(() => {
     setUnauthorizedHandler(() => {
       router.replace('/(auth)/login');
@@ -58,35 +152,37 @@ export default function RootLayout(): React.ReactElement {
     return () => setUnauthorizedHandler(null);
   }, []);
 
+  // Главный фикс «мерцания»: пока target=null, ничего не рендерим — значит
+  // никакой Stack/экран не существует в дереве, expo-router физически не может
+  // показать «промежуточный» онбординг или login. На экране ровно нативный
+  // splash, без единого React-компонента поверх.
+  if (target === null) return null;
+
   return (
-    <SafeAreaProvider>
-      <PersistQueryClientProvider
-        client={queryClient}
-        persistOptions={PERSIST_OPTIONS}
-      >
-        <ThemeProvider>
-          <ToastProvider>
-            <DialogProvider>
-              <ThemedStatusBar />
-              <PushNotificationsBridge />
-              <Stack
-                // Явно фиксируем стартовый route на `index` — без этого expo-router
-                // в некоторых случаях рендерит первую по алфавиту папку, что и
-                // приводило к промельку онбординга на cold start.
-                initialRouteName="index"
-                screenOptions={{
-                  headerShown: false,
-                  // Анимации между экранами при первом редиректе из IndexScreen
-                  // создают визуальный «слайд», который выглядит как мелькание
-                  // промежуточного экрана. Для router.replace это лишнее.
-                  animation: 'none',
-                }}
-              />
-            </DialogProvider>
-          </ToastProvider>
-        </ThemeProvider>
-      </PersistQueryClientProvider>
-    </SafeAreaProvider>
+    <BootstrapTargetContext.Provider value={target}>
+      <SafeAreaProvider>
+        <PersistQueryClientProvider
+          client={queryClient}
+          persistOptions={PERSIST_OPTIONS}
+        >
+          <ThemeProvider>
+            <ToastProvider>
+              <DialogProvider>
+                <ThemedStatusBar />
+                <PushNotificationsBridge />
+                <Stack
+                  initialRouteName="index"
+                  screenOptions={{
+                    headerShown: false,
+                    animation: 'none',
+                  }}
+                />
+              </DialogProvider>
+            </ToastProvider>
+          </ThemeProvider>
+        </PersistQueryClientProvider>
+      </SafeAreaProvider>
+    </BootstrapTargetContext.Provider>
   );
 }
 

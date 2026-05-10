@@ -14,7 +14,17 @@ interface RefreshResponse {
   refreshToken: string;
 }
 
-type RetriableConfig = InternalAxiosRequestConfig & { _retry?: boolean };
+// `_retry` — наш флаг, чтобы один и тот же запрос не зацикливался через refresh.
+// `_hadToken` — был ли в исходном запросе Authorization-header. Различение
+// «токен был и протух» vs «токена изначально не было» критично:
+//   - первое = настоящая ре-аутентификация, нужно через refresh + редирект
+//   - второе = юзер просто не залогинен, никакого редиректа делать нельзя
+//     (иначе залогиненный onUnauthorizedHandler перебивает любую другую
+//     навигацию в приложении — например, онбординг при первом запуске).
+type RetriableConfig = InternalAxiosRequestConfig & {
+  _retry?: boolean;
+  _hadToken?: boolean;
+};
 
 let onUnauthorizedHandler: (() => void) | null = null;
 
@@ -31,6 +41,7 @@ apiClient.interceptors.request.use(async (config) => {
   const token = await storage.getAccessToken();
   if (token) {
     config.headers.set('Authorization', `Bearer ${token}`);
+    (config as RetriableConfig)._hadToken = true;
   }
   return config;
 });
@@ -87,6 +98,15 @@ apiClient.interceptors.response.use(
     // её просто отдаём вызывающему коду. Refresh здесь бессмыслен и
     // выкидывать пользователя на /login тоже нельзя.
     if (isPublicAuthRequest(original.url)) {
+      return Promise.reject(error);
+    }
+
+    // Запрос изначально шёл БЕЗ токена — значит юзер просто не залогинен
+    // (например, фоновый useMe() из PushNotificationsBridge на первом
+    // запуске). Это НЕ «токен протух», refresh бессмыслен, и редирект на
+    // login перебил бы любую активную навигацию (онбординг, например).
+    // Молча отдаём 401 — компонент, который сделал запрос, его проигнорирует.
+    if (!original._hadToken) {
       return Promise.reject(error);
     }
 

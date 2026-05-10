@@ -144,6 +144,16 @@ docker compose --env-file .env.production -f "\$COMPOSE_FILE" \\
 }
 echo '  ✓ Caddy с новым конфигом'
 
+# 3b.2 Рестарт Grafana
+# Grafana читает provisioning (datasources, dashboards-loader) ТОЛЬКО при старте.
+# При изменениях в observability/grafana/provisioning compose тоже не
+# пересоздаёт контейнер, поэтому новые datasource/dashboards не подхватываются.
+# Полный рестарт даёт минимальный (3-5 сек) даунтайм только для UI логов —
+# на api.spbu-pmi.ru не влияет.
+echo '▶ Рестарт Grafana (перечитать provisioning)'
+docker compose --env-file .env.production -f "\$COMPOSE_FILE" restart grafana
+echo '  ✓ Grafana перезапущена'
+
 # 3c. Ждём healthcheck'а
 echo '▶ Ждём, пока бэк станет healthy (до 90 сек)'
 for i in {1..18}; do
