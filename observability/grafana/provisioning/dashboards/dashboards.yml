@@ -1,0 +1,15 @@
+# Auto-loader дашбордов: всё что лежит в /var/lib/grafana/dashboards
+# подхватывается при старте.
+
+apiVersion: 1
+
+providers:
+  - name: 'PM-Task'
+    orgId: 1
+    folder: 'PM-Task'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards

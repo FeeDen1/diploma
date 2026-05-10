@@ -1,0 +1,58 @@
+# Loki — local-mode конфиг для одного инстанса.
+#
+# По дефолту Loki хочет S3/GCS/Cassandra для chunks и BoltDB-shipper для индексов
+# в кластерном режиме. Для дипломки и одного VPS этого избыточно — используем
+# filesystem-хранилище + tsdb-shipper (новее BoltDB, рекомендуется в Loki 3+).
+
+auth_enabled: false # одиночный инстанс, multi-tenant не нужен
+
+server:
+  http_listen_port: 3100
+  grpc_listen_port: 9095
+  # Лимит пэйлоада push-запросов. Дефолт 4 MB маловато если backend в пике
+  # шлёт burst логов; 16 MB с запасом для нашего объёма.
+  grpc_server_max_recv_msg_size: 16777216
+  grpc_server_max_send_msg_size: 16777216
+
+common:
+  path_prefix: /loki
+  # Где Loki хранит chunks и tsdb-индекс.
+  storage:
+    filesystem:
+      chunks_directory: /loki/chunks
+      rules_directory: /loki/rules
+  replication_factor: 1
+  ring:
+    kvstore:
+      store: inmemory
+
+schema_config:
+  configs:
+    - from: 2024-01-01
+      store: tsdb
+      object_store: filesystem
+      schema: v13
+      index:
+        prefix: index_
+        period: 24h
+
+# Лимиты — защита от сценария «бэк сошёл с ума и шлёт 1000 строк в секунду».
+# Для нашего объёма (~50 строк/сек) пороги с большим запасом.
+limits_config:
+  # Сколько дней храним логи. 7 дней покрывают разбор инцидентов и для
+  # дипломки достаточно. На VPS 30 GB диска это занимает мало места
+  # (Pino-JSON хорошо жмётся, ~1 GB/неделя при текущем трафике).
+  retention_period: 168h # = 7 дней
+  # Старые сэмплы (за пределами retention) — отбрасываем.
+  reject_old_samples: true
+  reject_old_samples_max_age: 168h
+  ingestion_rate_mb: 8 # 8 MB/sec на стрим — больше чем мы пишем
+  ingestion_burst_size_mb: 16
+
+compactor:
+  working_directory: /loki/compactor
+  compaction_interval: 10m
+  retention_enabled: true
+  retention_delete_delay: 2h
+  retention_delete_worker_count: 150
+  delete_request_store: filesystem

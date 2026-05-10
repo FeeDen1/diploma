@@ -1,0 +1,21 @@
+# Auto-provisioning datasource для Grafana — при старте контейнера
+# Loki сразу подключён, не надо тыкать «Add data source» в UI вручную.
+
+apiVersion: 1
+
+datasources:
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    isDefault: true
+    editable: false # из UI не дать поправить — только через этот файл
+    jsonData:
+      # Лимит сколько строк Loki вернёт на один запрос. Дефолт 1000.
+      maxLines: 5000
+      # При клике по записи раскрывать все JSON-поля (Pino формат)
+      derivedFields:
+        - datasourceUid: ''
+          matcherRegex: '"req":\{[^}]*"id":(\d+)'
+          name: 'requestId'
+          url: ''
