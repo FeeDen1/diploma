@@ -2,7 +2,7 @@ import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
-import { notificationsApi, type DevicePlatform } from '../../../shared/api/notifications';
+import { notificationsApi, type DevicePlatform } from '@shared/api/notifications';
 
 /**
  * Получает Expo Push Token и регистрирует его на бэке.

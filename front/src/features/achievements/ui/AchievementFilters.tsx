@@ -4,7 +4,7 @@ import {
   TASK_CATEGORIES,
   TASK_CATEGORY_LABELS,
   type TaskCategory,
-} from '../../../shared/api/tasks';
+} from '@shared/api/tasks';
 
 interface Props {
   selected: TaskCategory | null;

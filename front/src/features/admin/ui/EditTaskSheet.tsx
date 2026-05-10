@@ -8,19 +8,19 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Button } from '../../../shared/ui/Button';
-import { Input } from '../../../shared/ui/Input';
-import { CloseIcon } from '../../../shared/ui/icons';
-import { DateTimeField } from '../../../shared/ui/DateTimeField';
-import { useToast } from '../../../shared/ui';
-import { extractErrorMessage } from '../../../shared/api';
+import { Button } from '@shared/ui/Button';
+import { Input } from '@shared/ui/Input';
+import { CloseIcon } from '@shared/ui/icons';
+import { DateTimeField } from '@shared/ui/DateTimeField';
+import { useToast } from '@shared/ui';
+import { extractErrorMessage } from '@shared/api';
 import {
   TASK_CATEGORIES,
   TASK_CATEGORY_LABELS,
   type TaskCategory,
-} from '../../../shared/api/tasks';
-import type { Task } from '../../../entities/task';
-import { useUpdateTask } from '../../../entities/task';
+} from '@shared/api/tasks';
+import type { Task } from '@entities/task';
+import { useUpdateTask } from '@entities/task';
 
 interface Props {
   task: Task | null;

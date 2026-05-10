@@ -7,13 +7,13 @@ import {
   View,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { Button } from '../../../shared/ui/Button';
-import { Input } from '../../../shared/ui/Input';
-import { useAlert, useToast } from '../../../shared/ui';
-import { extractErrorMessage } from '../../../shared/api';
-import { prepareImageForUpload } from '../../../shared/lib/prepare-image';
-import { filesApi } from '../../../shared/api/files';
-import { useCreateReward } from '../../../entities/reward';
+import { Button } from '@shared/ui/Button';
+import { Input } from '@shared/ui/Input';
+import { useAlert, useToast } from '@shared/ui';
+import { extractErrorMessage } from '@shared/api';
+import { prepareImageForUpload } from '@shared/lib/prepare-image';
+import { filesApi } from '@shared/api/files';
+import { useCreateReward } from '@entities/reward';
 
 export function AddRewardForm(): React.ReactElement {
   const [title, setTitle] = useState('');

@@ -28,6 +28,23 @@ module.exports = [
       // axios.create() / axios.isAxiosError — идиоматичный паттерн axios,
       // правило бросает шум на каждый его вызов
       'import/no-named-as-default-member': 'off',
+      // Защита FSD-границ: путь через ../ к чужому слою — ошибка, должно
+      // быть @shared / @entities / @features / @widgets / @pages.
+      // Внутри одного slice (../ui/Button и т.п.) относительные импорты
+      // остаются разрешены — regex требует именно перехода через слой.
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              regex:
+                '^(\\.\\./)+(src/)?(shared|entities|features|widgets|pages)/',
+              message:
+                'Используй FSD-алиас (@shared, @entities, @features, @widgets, @pages) вместо относительного пути через слой.',
+            },
+          ],
+        },
+      ],
     },
   },
 ];

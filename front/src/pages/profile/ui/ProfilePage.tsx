@@ -1,14 +1,14 @@
 import React, { useMemo } from 'react';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
 import { router } from 'expo-router';
-import { Button } from '../../../shared/ui/Button';
-import { Card } from '../../../shared/ui/Card';
-import { useMe } from '../../../entities/user';
-import { useMySubmissions } from '../../../entities/submission';
-import { useTasksCount } from '../../../entities/task';
-import { ProfileHeader, UserProgress } from '../../../features/profile';
-import { ThemeToggle } from '../../../features/theme';
-import { useLogout } from '../../../features/auth';
+import { Button } from '@shared/ui/Button';
+import { Card } from '@shared/ui/Card';
+import { useMe } from '@entities/user';
+import { useMySubmissions } from '@entities/submission';
+import { useTasksCount } from '@entities/task';
+import { ProfileHeader, UserProgress } from '@features/profile';
+import { ThemeToggle } from '@features/theme';
+import { useLogout } from '@features/auth';
 import { Stat } from './Stat';
 
 /**

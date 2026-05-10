@@ -1,12 +1,12 @@
 import React, { useMemo } from 'react';
 import { ScrollView, View } from 'react-native';
-import { FilterChip } from '../../../shared/ui/FilterChip';
+import { FilterChip } from '@shared/ui/FilterChip';
 import {
   DIRECTIONS,
   DIRECTION_LABELS,
   type Direction,
-} from '../../../shared/api/groups';
-import { useGroups } from '../../../entities/group';
+} from '@shared/api/groups';
+import { useGroups } from '@entities/group';
 
 interface Props {
   direction: Direction | null;

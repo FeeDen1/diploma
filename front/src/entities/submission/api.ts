@@ -5,12 +5,12 @@ import {
   type UseMutationResult,
   type UseQueryResult,
 } from '@tanstack/react-query';
-import { queryKeys } from '../../shared/api';
-import { filesApi } from '../../shared/api/files';
+import { queryKeys } from '@shared/api';
+import { filesApi } from '@shared/api/files';
 import {
   submissionsApi,
   type SubmissionStatus,
-} from '../../shared/api/submissions';
+} from '@shared/api/submissions';
 import { toMySubmissionDomain, toSubmissionDomain } from './mappers';
 import type { MySubmission, Submission } from './types';
 

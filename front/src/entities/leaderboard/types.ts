@@ -1,4 +1,4 @@
-import type { Direction } from '../../shared/api/groups';
+import type { Direction } from '@shared/api/groups';
 
 export interface LeaderboardEntry {
   rank: number;

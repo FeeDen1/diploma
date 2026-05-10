@@ -1,18 +1,18 @@
 import React, { useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, View } from 'react-native';
-import { FilterChip } from '../../../shared/ui/FilterChip';
-import { EmptyState } from '../../../shared/ui/EmptyState';
-import { ArchiveIcon } from '../../../shared/ui/icons';
-import { useConfirm, useToast } from '../../../shared/ui';
-import { extractErrorMessage } from '../../../shared/api';
+import { FilterChip } from '@shared/ui/FilterChip';
+import { EmptyState } from '@shared/ui/EmptyState';
+import { ArchiveIcon } from '@shared/ui/icons';
+import { useConfirm, useToast } from '@shared/ui';
+import { extractErrorMessage } from '@shared/api';
 import {
   flattenInfiniteTasks,
   useArchiveTask,
   useInfiniteTasks,
   useUnarchiveTask,
   type Task,
-} from '../../../entities/task';
-import { EditTaskSheet } from '../../../features/admin';
+} from '@entities/task';
+import { EditTaskSheet } from '@features/admin';
 import { AdminTaskRow, type AdminTasksScope } from './AdminTaskRow';
 
 /**

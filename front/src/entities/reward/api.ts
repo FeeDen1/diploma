@@ -5,12 +5,12 @@ import {
   type UseMutationResult,
   type UseQueryResult,
 } from '@tanstack/react-query';
-import { queryKeys } from '../../shared/api';
+import { queryKeys } from '@shared/api';
 import {
   rewardsApi,
   type CreateRewardDto,
   type ReadRedemptionDto,
-} from '../../shared/api/rewards';
+} from '@shared/api/rewards';
 import { toRewardDomain, toRewardOrderDomain } from './mappers';
 import type { Reward, RewardOrder } from './types';
 

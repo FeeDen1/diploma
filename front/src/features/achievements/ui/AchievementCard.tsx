@@ -1,14 +1,14 @@
 import React from 'react';
 import { Image, Text, TouchableOpacity, View } from 'react-native';
-import { Badge } from '../../../shared/ui/Badge';
-import { TrophyIcon } from '../../../shared/ui/icons';
-import { TASK_CATEGORY_LABELS } from '../../../shared/api/tasks';
+import { Badge } from '@shared/ui/Badge';
+import { TrophyIcon } from '@shared/ui/icons';
+import { TASK_CATEGORY_LABELS } from '@shared/api/tasks';
 import {
   formatDeadline,
   getDeadlineSeverity,
   isRecentlyCreated,
   type DeadlineSeverity,
-} from '../../../shared/lib/date';
+} from '@shared/lib/date';
 import type {
   AchievementStatus,
   AchievementView,

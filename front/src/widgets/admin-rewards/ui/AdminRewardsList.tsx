@@ -6,16 +6,16 @@ import {
   Text,
   View,
 } from 'react-native';
-import { EmptyState } from '../../../shared/ui/EmptyState';
-import { IconButton } from '../../../shared/ui/IconButton';
-import { BagIcon, DeleteIcon, TrophyIcon } from '../../../shared/ui/icons';
-import { useConfirm, useToast } from '../../../shared/ui';
-import { extractErrorMessage } from '../../../shared/api';
+import { EmptyState } from '@shared/ui/EmptyState';
+import { IconButton } from '@shared/ui/IconButton';
+import { BagIcon, DeleteIcon, TrophyIcon } from '@shared/ui/icons';
+import { useConfirm, useToast } from '@shared/ui';
+import { extractErrorMessage } from '@shared/api';
 import {
   useArchiveReward,
   useRewards,
   type Reward,
-} from '../../../entities/reward';
+} from '@entities/reward';
 
 /**
  * Виджет «список лотов магазина в админке». Композирует:

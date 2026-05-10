@@ -1,11 +1,11 @@
 import React from 'react';
 import { ActivityIndicator, FlatList, Text, TouchableOpacity, View } from 'react-native';
-import { Card } from '../../../shared/ui/Card';
-import { EmptyState } from '../../../shared/ui/EmptyState';
-import { AlbumsIcon, ChevronForwardIcon } from '../../../shared/ui/icons';
-import { DIRECTION_LABELS } from '../../../shared/api/groups';
-import { useMyGroups } from '../../../entities/group';
-import type { Group } from '../../../entities/group';
+import { Card } from '@shared/ui/Card';
+import { EmptyState } from '@shared/ui/EmptyState';
+import { AlbumsIcon, ChevronForwardIcon } from '@shared/ui/icons';
+import { DIRECTION_LABELS } from '@shared/api/groups';
+import { useMyGroups } from '@entities/group';
+import type { Group } from '@entities/group';
 
 interface Props {
   onSelectGroup: (group: Group) => void;

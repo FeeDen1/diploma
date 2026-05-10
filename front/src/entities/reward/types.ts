@@ -1,4 +1,4 @@
-import type { RedemptionStatus } from '../../shared/api/rewards';
+import type { RedemptionStatus } from '@shared/api/rewards';
 
 export interface Reward {
   id: string;

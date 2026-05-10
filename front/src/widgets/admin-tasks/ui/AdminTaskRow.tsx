@@ -1,19 +1,19 @@
 import React from 'react';
 import { Image, Text, TouchableOpacity, View } from 'react-native';
-import { Badge } from '../../../shared/ui/Badge';
-import { IconButton } from '../../../shared/ui/IconButton';
+import { Badge } from '@shared/ui/Badge';
+import { IconButton } from '@shared/ui/IconButton';
 import {
   DeleteIcon,
   RefreshIcon,
   TrophyIcon,
-} from '../../../shared/ui/icons';
-import { TASK_CATEGORY_LABELS } from '../../../shared/api/tasks';
+} from '@shared/ui/icons';
+import { TASK_CATEGORY_LABELS } from '@shared/api/tasks';
 import {
   formatDeadline,
   getDeadlineSeverity,
   type DeadlineSeverity,
-} from '../../../shared/lib/date';
-import type { Task } from '../../../entities/task';
+} from '@shared/lib/date';
+import type { Task } from '@entities/task';
 
 const DEADLINE_BADGE: Record<DeadlineSeverity, 'error' | 'warning' | 'info'> = {
   expired: 'error',

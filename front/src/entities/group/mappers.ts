@@ -1,7 +1,7 @@
 import type {
   ReadGroupDetailDto,
   ReadGroupDto,
-} from '../../shared/api/groups';
+} from '@shared/api/groups';
 import { toUserDomain } from '../user/mappers';
 import type { Group, GroupDetail } from './types';
 

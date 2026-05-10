@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { Text, View } from 'react-native';
-import { Button } from '../../../shared/ui/Button';
-import { DIRECTION_LABELS } from '../../../shared/api/groups';
-import { type Group, type StudentProgressItem } from '../../../entities/group';
-import { GroupsList } from '../../../features/adapter';
-import { StudentsList } from '../../../widgets/students-list';
-import { StudentSubmissionsList } from '../../../widgets/student-submissions';
+import { Button } from '@shared/ui/Button';
+import { DIRECTION_LABELS } from '@shared/api/groups';
+import { type Group, type StudentProgressItem } from '@entities/group';
+import { GroupsList } from '@features/adapter';
+import { StudentsList } from '@widgets/students-list';
+import { StudentSubmissionsList } from '@widgets/student-submissions';
 
 /**
  * Страница куратора. Конечный автомат с тремя состояниями:

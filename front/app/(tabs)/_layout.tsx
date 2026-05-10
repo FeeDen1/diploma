@@ -7,9 +7,9 @@ import {
   PodiumIcon,
   SettingsIcon,
   TrophyIcon,
-} from '../../src/shared/ui/icons';
-import { useMe } from '../../src/entities/user';
-import { useThemeColors } from '../../src/shared/theme';
+} from '@shared/ui/icons';
+import { useMe } from '@entities/user';
+import { useThemeColors } from '@shared/theme';
 
 export default function TabsLayout(): React.ReactElement {
   const { data: me } = useMe();

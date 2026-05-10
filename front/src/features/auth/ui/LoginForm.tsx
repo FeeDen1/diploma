@@ -8,9 +8,9 @@ import {
   View,
 } from 'react-native';
 import { router } from 'expo-router';
-import { Button } from '../../../shared/ui/Button';
-import { Input } from '../../../shared/ui/Input';
-import { extractErrorMessage } from '../../../shared/api';
+import { Button } from '@shared/ui/Button';
+import { Input } from '@shared/ui/Input';
+import { extractErrorMessage } from '@shared/api';
 import { loginSchema, type LoginFormData } from '../model/authSchema';
 import { useLogin } from '../lib/useAuth';
 

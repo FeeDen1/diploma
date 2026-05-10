@@ -7,19 +7,19 @@ import {
   View,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { Button } from '../../../shared/ui/Button';
-import { Input } from '../../../shared/ui/Input';
-import { DateTimeField } from '../../../shared/ui/DateTimeField';
-import { useAlert, useToast } from '../../../shared/ui';
-import { extractErrorMessage } from '../../../shared/api';
-import { prepareImageForUpload } from '../../../shared/lib/prepare-image';
-import { filesApi } from '../../../shared/api/files';
+import { Button } from '@shared/ui/Button';
+import { Input } from '@shared/ui/Input';
+import { DateTimeField } from '@shared/ui/DateTimeField';
+import { useAlert, useToast } from '@shared/ui';
+import { extractErrorMessage } from '@shared/api';
+import { prepareImageForUpload } from '@shared/lib/prepare-image';
+import { filesApi } from '@shared/api/files';
 import {
   TASK_CATEGORIES,
   TASK_CATEGORY_LABELS,
   type TaskCategory,
-} from '../../../shared/api/tasks';
-import { useCreateTask } from '../../../entities/task';
+} from '@shared/api/tasks';
+import { useCreateTask } from '@entities/task';
 
 export function AddTaskForm(): React.ReactElement {
   const [title, setTitle] = useState('');

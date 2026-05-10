@@ -1,7 +1,7 @@
 import React from 'react';
 import { Image, Text, TouchableOpacity, View } from 'react-native';
-import { TrophyIcon } from '../../../shared/ui/icons';
-import type { Reward } from '../../../entities/reward';
+import { TrophyIcon } from '@shared/ui/icons';
+import type { Reward } from '@entities/reward';
 
 interface Props {
   reward: Reward;

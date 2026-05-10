@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { EMAIL_REGEX } from '../../../shared/lib/constants';
+import { EMAIL_REGEX } from '@shared/lib/constants';
 
 export const loginSchema = z.object({
   email: z

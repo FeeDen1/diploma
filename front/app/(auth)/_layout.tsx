@@ -1,6 +1,6 @@
 import React from 'react';
 import { Stack } from 'expo-router';
-import { useThemeColors } from '../../src/shared/theme';
+import { useThemeColors } from '@shared/theme';
 
 export default function AuthLayout(): React.ReactElement {
   const colors = useThemeColors();

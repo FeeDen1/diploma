@@ -1,4 +1,4 @@
-import type { ReadTaskDto } from '../../shared/api/tasks';
+import type { ReadTaskDto } from '@shared/api/tasks';
 import type { Task } from './types';
 
 export function toTaskDomain(dto: ReadTaskDto): Task {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View } from 'react-native';
-import { AchievementsList } from '../../../widgets/achievements-feed';
+import { AchievementsList } from '@widgets/achievements-feed';
 
 /**
  * Страница «Задания» — тонкая обёртка над feature AchievementsList.

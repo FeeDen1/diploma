@@ -1,8 +1,8 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { storage } from '../src/shared/lib/storage';
-import { usersApi } from '../src/shared/api/users';
+import { storage } from '@shared/lib/storage';
+import { usersApi } from '@shared/api/users';
 
 /**
  * Удерживаем нативный splash-screen, пока bootstrap-эффект не решит, на какой

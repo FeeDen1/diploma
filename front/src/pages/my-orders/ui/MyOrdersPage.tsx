@@ -7,11 +7,11 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Card } from '../../../shared/ui/Card';
-import { EmptyState } from '../../../shared/ui/EmptyState';
-import { ScreenHeader } from '../../../shared/ui/ScreenHeader';
-import { BagIcon } from '../../../shared/ui/icons';
-import { useMyRewardOrders, type RewardOrder } from '../../../entities/reward';
+import { Card } from '@shared/ui/Card';
+import { EmptyState } from '@shared/ui/EmptyState';
+import { ScreenHeader } from '@shared/ui/ScreenHeader';
+import { BagIcon } from '@shared/ui/icons';
+import { useMyRewardOrders, type RewardOrder } from '@entities/reward';
 
 /**
  * Страница «Мои заказы». Открывается из профиля. Только чтение, без действий —
