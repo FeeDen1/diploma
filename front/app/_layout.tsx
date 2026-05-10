@@ -70,15 +70,9 @@ export default function RootLayout(): React.ReactElement {
               <ThemedStatusBar />
               <PushNotificationsBridge />
               <Stack
-                // Явно фиксируем стартовый route на `index` — без этого expo-router
-                // в некоторых случаях рендерит первую по алфавиту папку, что и
-                // приводило к промельку онбординга на cold start.
                 initialRouteName="index"
                 screenOptions={{
                   headerShown: false,
-                  // Анимации между экранами при первом редиректе из IndexScreen
-                  // создают визуальный «слайд», который выглядит как мелькание
-                  // промежуточного экрана. Для router.replace это лишнее.
                   animation: 'none',
                 }}
               />
