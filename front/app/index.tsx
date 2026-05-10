@@ -1,73 +1,81 @@
-import { useEffect } from 'react';
-import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { Redirect } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { storage } from '@shared/lib/storage';
 
 /**
+ * Куда вести пользователя после bootstrap. `null` означает «решение ещё не
+ * принято» — на это время рендерим null, нативный splash остаётся видимым.
+ *
+ * Список путей фиксирован, дальше только эти 4 направления:
+ *   - /(onboarding)         — первый запуск, не пройден
+ *   - /(auth)/login         — нет валидного access-токена
+ *   - /(onboarding)/setup   — токен есть, но профиль не заполнен
+ *   - /(tabs)/achievements  — обычный вход в приложение
+ */
+type BootstrapTarget =
+  | '/(onboarding)'
+  | '/(auth)/login'
+  | '/(onboarding)/setup'
+  | '/(tabs)/achievements';
+
+/**
  * preventAutoHideAsync вызывается в `app/_layout.tsx` — раньше любого экрана,
  * чтобы expo-router не успел отрисовать первый по алфавиту route до того как
- * SecureStore прочитан. Здесь же остаётся только hideAsync в finally — после
- * того как bootstrap решит, на какой экран вести пользователя.
+ * SecureStore прочитан. Здесь же только вычисляем целевой роут и снимаем splash.
+ *
+ * Принципиально используем компонент <Redirect /> от expo-router, а не
+ * императивный router.replace в useEffect: Redirect делает переход на этапе
+ * рендера и не запускает анимацию `<Stack>`, поэтому никаких промежуточных
+ * экранов не успевает мелькнуть на пути от splash до целевого роута.
  */
+export default function IndexScreen(): React.ReactElement | null {
+  const [target, setTarget] = useState<BootstrapTarget | null>(null);
 
-export default function IndexScreen(): null {
   useEffect(() => {
     let mounted = true;
 
-    async function bootstrap(): Promise<void> {
-      try {
-        const onboardingDone = await storage.isOnboardingCompleted();
-        if (!onboardingDone) {
-          if (mounted) router.replace('/(onboarding)');
-          return;
-        }
+    async function decide(): Promise<BootstrapTarget> {
+      const onboardingDone = await storage.isOnboardingCompleted();
+      if (!onboardingDone) return '/(onboarding)';
 
-        const accessToken = await storage.getAccessToken();
-        if (!accessToken) {
-          if (mounted) router.replace('/(auth)/login');
-          return;
-        }
+      const accessToken = await storage.getAccessToken();
+      if (!accessToken) return '/(auth)/login';
 
-        // Намеренно НЕ дёргаем getMe() здесь:
-        //
-        //  1. Оффлайн: запрос упадёт с network error, и любая реакция в catch
-        //     (clearTokens + redirect на login) будет ложным выкидыванием
-        //     валидного юзера. PersistQueryClient рисует кеш из AsyncStorage —
-        //     приложение должно открыться даже без сети.
-        //  2. Онлайн с протухшим access-токеном: refresh подхватится в axios-
-        //     interceptor (см. setUnauthorizedHandler в `app/_layout.tsx`),
-        //     который сам редиректнет на login, если refresh тоже умер.
-        //
-        // Таким образом, наличие access-токена в SecureStore — единственный
-        // признак «юзер залогинен». Валидность проверит бэк когда дойдут
-        // запросы, а нам тут не нужно блокировать старт ради этой проверки.
+      // Намеренно НЕ дёргаем getMe() — сценарий «оффлайн при старте» иначе
+      // выкидывал бы юзера на login. Валидность токена проверит axios-
+      // interceptor когда реальные запросы пойдут (см. setUnauthorizedHandler
+      // в `app/_layout.tsx`).
 
-        const profileDone = await storage.isProfileSetupCompleted();
-        if (!profileDone) {
-          if (mounted) router.replace('/(onboarding)/setup');
-          return;
-        }
+      const profileDone = await storage.isProfileSetupCompleted();
+      if (!profileDone) return '/(onboarding)/setup';
 
-        if (mounted) router.replace('/(tabs)/achievements');
-      } catch {
-        if (mounted) router.replace('/(auth)/login');
-      } finally {
-        // Скрываем splash только после того, как пункт назначения уже выбран
-        // и router.replace отработал. Иначе пользователь увидит первый кадр
-        // не того экрана. catch — на случай повторного вызова hideAsync.
-        await SplashScreen.hideAsync().catch(() => undefined);
-      }
+      return '/(tabs)/achievements';
     }
 
-    void bootstrap();
+    decide()
+      .then((next) => {
+        if (mounted) setTarget(next);
+      })
+      .catch(() => {
+        if (mounted) setTarget('/(auth)/login');
+      })
+      .finally(() => {
+        // Скрываем splash после того, как target уже выставлен в state и
+        // следующий рендер вернёт <Redirect />. Так нативный splash живёт до
+        // самого момента появления целевого экрана.
+        void SplashScreen.hideAsync().catch(() => undefined);
+      });
 
     return () => {
       mounted = false;
     };
   }, []);
 
-  // Ничего не рендерим: пока bootstrap идёт, на экране нативный splash
-  // (см. resizeMode/backgroundColor в app.json), а после router.replace
-  // этот компонент уже не виден — текущим становится целевой экран.
-  return null;
+  // target ещё не вычислен — рендерим ничего; splash виден.
+  if (target === null) return null;
+
+  // Декларативный редирект expo-router — без анимации, без промежуточных
+  // экранов в стеке. Срабатывает синхронно при коммите.
+  return <Redirect href={target} />;
 }
