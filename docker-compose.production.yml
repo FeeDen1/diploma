@@ -121,6 +121,77 @@ services:
       # Persist position-файла, чтобы при рестарте не лить дубли.
       - promtail_data:/tmp
 
+  # ──────────────────────────────────────────────────────────────────
+  # Метрики: Prometheus + node-exporter (хост) + cAdvisor (контейнеры)
+  # ──────────────────────────────────────────────────────────────────
+  #
+  # node-exporter читает /proc, /sys и rootfs хоста, экспортит классику
+  # CPU/RAM/Disk/Net по адресу :9100. cAdvisor через docker.sock и
+  # /var/lib/docker даёт per-container CPU/RAM/IO/network на :8080.
+  # Prometheus раз в 15 секунд скрейпит обоих и хранит TSDB локально.
+  #
+  # Наружу не светим ни один из трёх — Grafana ходит к Prometheus
+  # по hostname внутри docker-сети. Это критично: Prometheus не имеет
+  # встроенной авторизации, светить его публично нельзя.
+  prometheus:
+    image: prom/prometheus:v3.0.1
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle' # /-/reload без рестарта при правке конфига
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    healthcheck:
+      test: ['CMD', 'wget', '--quiet', '--spider', 'http://localhost:9090/-/healthy']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:v1.8.2
+    restart: unless-stopped
+    # pid: host даёт node-exporter видеть все процессы хоста — иначе
+    # часть метрик (load avg, контекст-свитчи, etc) показывала бы только
+    # содержимое контейнера.
+    pid: host
+    volumes:
+      # rootfs хоста смонтирован readonly. node-exporter с флагом
+      # --path.rootfs=/host_rootfs ходит туда за /proc/stat, /proc/meminfo
+      # и т.п., а не в свой контейнерный rootfs.
+      - /:/host_rootfs:ro,rslave
+    command:
+      - '--path.procfs=/host_rootfs/proc'
+      - '--path.sysfs=/host_rootfs/sys'
+      - '--path.rootfs=/host_rootfs'
+      # Исключаем виртуальные/докерные mount-points чтобы не засорять
+      # метрики disk usage.
+      - '--collector.filesystem.mount-points-exclude=^/(host_rootfs/)?(rootfs|sys|proc|dev|run|var/lib/docker|host|etc)($$|/)'
+      - '--collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs)$$'
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    restart: unless-stopped
+    # cAdvisor требует privileged для чтения cgroup и docker-runtime метрик.
+    # Это типовой паттерн для observability-стека на single-node setup.
+    privileged: true
+    devices:
+      - /dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    command:
+      # Снижаем cardinality — без флага cAdvisor шлёт метрики на каждый
+      # cgroup/процесс что раздувает Prometheus в десять раз.
+      - '--docker_only=true'
+      - '--store_container_labels=false'
+
   grafana:
     image: grafana/grafana:11.3.1
     restart: unless-stopped
@@ -190,3 +261,4 @@ volumes:
   loki_data:
   promtail_data:
   grafana_data:
+  prometheus_data:
