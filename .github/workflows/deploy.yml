@@ -1,0 +1,85 @@
+name: Deploy to production
+
+# Запускаемся только после того, как Back CI на main прошёл успешно.
+# Это даёт безопасную цепочку: red lint → ничего не катится в прод.
+#
+# Альтернатива (push с paths-filter) была бы быстрее, но допускала бы
+# деплой при упавшем CI — для дипломки это анти-паттерн.
+on:
+  workflow_run:
+    workflows: ['Back CI']
+    types: [completed]
+    branches: [main]
+  # Разрешаем ручной запуск из вкладки Actions — пригодится если деплой
+  # нужно прокатить без правок кода (например, после обновления секретов).
+  workflow_dispatch:
+
+# Гарантируем, что два деплоя не выполнятся одновременно. cancel-in-progress=false:
+# если уже катится — новый встаёт в очередь, не убивает текущий.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: SSH deploy on VPS
+    runs-on: ubuntu-latest
+    # Стартуем только если CI прошёл успешно ИЛИ это ручной запуск.
+    # github.event.workflow_run.conclusion для workflow_dispatch == null,
+    # поэтому проверяем оба ветвления.
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+
+    # Защищённое окружение — даёт audit log в GitHub Environments
+    # и возможность позже добавить required reviewers.
+    environment:
+      name: production
+      url: https://api.spbu-pmi.ru/api/health
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          # Не задаём passphrase — для CI используется отдельный ключ
+          # без passphrase, защищённый только GitHub-секретами.
+          script_stop: true
+          # Тайм-ауты с запасом: docker pull + build + миграции при первом
+          # деплое могут занять 2-3 минуты, особенно если меняется image base.
+          command_timeout: 10m
+          script: |
+            set -euo pipefail
+            cd /opt/pmtask
+
+            echo "▶ Обновляю код"
+            git fetch origin main
+            git reset --hard origin/main
+            echo "  HEAD = $(git rev-parse --short HEAD)"
+
+            echo "▶ docker compose up --build -d"
+            docker compose --env-file .env.production \
+              -f docker-compose.production.yml up --build -d
+
+            echo "▶ Жду пока backend станет healthy (до 90 сек)"
+            for i in {1..18}; do
+              status=$(docker inspect --format='{{.State.Health.Status}}' diploma-backend-1 2>/dev/null || echo unknown)
+              if [ "$status" = "healthy" ]; then
+                echo "  backend healthy"
+                break
+              fi
+              if [ "$i" = "18" ]; then
+                echo "  ✗ backend не стал healthy за 90 сек"
+                docker compose --env-file .env.production \
+                  -f docker-compose.production.yml logs --tail 50 backend
+                exit 1
+              fi
+              sleep 5
+            done
+
+            echo "▶ Smoke-test /api/health через localhost"
+            curl --fail --silent --show-error \
+              http://localhost:5001/api/health > /dev/null
+            echo "  health endpoint жив"
