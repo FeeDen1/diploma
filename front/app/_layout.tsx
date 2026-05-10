@@ -1,6 +1,7 @@
 import '../global.css';
 import React, { useEffect } from 'react';
 import { Stack, router } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -14,6 +15,19 @@ import {
   usePushTokenSync,
   useNotificationRouting,
 } from '@features/push-notifications';
+
+/**
+ * Удерживаем нативный splash-screen на ROOT-уровне, до того как expo-router
+ * успел смонтировать `<Stack />` и любые экраны под ним. Если делать это
+ * только в `app/index.tsx`, между моментом скрытия дефолтного splash'а и
+ * выполнением preventAutoHideAsync остаётся узкое окно, в котором роутер
+ * может успеть показать первый по алфавиту route (онбординг) — отсюда
+ * «мелькание» при каждом запуске.
+ *
+ * Hide происходит в `app/index.tsx` после того, как bootstrap решит, на
+ * какой экран вести пользователя.
+ */
+void SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 /**
  * Persister TanStack Query для офлайн-режима: сериализует кэш в AsyncStorage,
@@ -55,7 +69,19 @@ export default function RootLayout(): React.ReactElement {
             <DialogProvider>
               <ThemedStatusBar />
               <PushNotificationsBridge />
-              <Stack screenOptions={{ headerShown: false }} />
+              <Stack
+                // Явно фиксируем стартовый route на `index` — без этого expo-router
+                // в некоторых случаях рендерит первую по алфавиту папку, что и
+                // приводило к промельку онбординга на cold start.
+                initialRouteName="index"
+                screenOptions={{
+                  headerShown: false,
+                  // Анимации между экранами при первом редиректе из IndexScreen
+                  // создают визуальный «слайд», который выглядит как мелькание
+                  // промежуточного экрана. Для router.replace это лишнее.
+                  animation: 'none',
+                }}
+              />
             </DialogProvider>
           </ToastProvider>
         </ThemeProvider>

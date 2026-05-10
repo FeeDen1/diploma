@@ -131,6 +131,19 @@ echo '▶ docker compose up --build -d'
 docker compose --env-file .env.production -f "\$COMPOSE_FILE" up --build -d
 echo '  ✓ стек поднят'
 
+# 3b.1 Перезагрузка Caddy
+# Caddyfile примонтирован в caddy через volume, но сам Caddy не следит
+# за файлом — поэтому при изменениях в Caddyfile (новые домены, security
+# headers) compose не пересоздаёт контейнер (image не менялся), и старый
+# конфиг продолжает действовать. Делаем reload руками — он без даунтайма.
+echo '▶ Перечитываю Caddyfile (caddy reload)'
+docker compose --env-file .env.production -f "\$COMPOSE_FILE" \\
+    exec -T caddy caddy reload --config /etc/caddy/Caddyfile 2>&1 || {
+    echo '  ⚠ caddy reload не прошёл, пробую restart'
+    docker compose --env-file .env.production -f "\$COMPOSE_FILE" restart caddy
+}
+echo '  ✓ Caddy с новым конфигом'
+
 # 3c. Ждём healthcheck'а
 echo '▶ Ждём, пока бэк станет healthy (до 90 сек)'
 for i in {1..18}; do

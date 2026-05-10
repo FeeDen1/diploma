@@ -91,6 +91,13 @@
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
+          "links": [
+            {
+              "title": "Открыть errors в Explore",
+              "url": "/explore?orgId=1&left=%7B%22datasource%22:%22loki%22,%22queries%22:%5B%7B%22refId%22:%22A%22,%22datasource%22:%7B%22type%22:%22loki%22,%22uid%22:%22loki%22%7D,%22expr%22:%22%7Bservice%3D%5C%22backend%5C%22,%20level%3D%5C%22error%5C%22%7D%22%7D%5D,%22range%22:%7B%22from%22:%22now-1h%22,%22to%22:%22now%22%7D%7D",
+              "targetBlank": false
+            }
+          ],
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -121,7 +128,7 @@
           "refId": "A"
         }
       ],
-      "title": "Errors (last range)",
+      "title": "Errors (last range) → клик открывает Explore",
       "type": "stat"
     },
     {
@@ -129,11 +136,18 @@
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
+          "links": [
+            {
+              "title": "Открыть warnings в Explore",
+              "url": "/explore?orgId=1&left=%7B%22datasource%22:%22loki%22,%22queries%22:%5B%7B%22refId%22:%22A%22,%22datasource%22:%7B%22type%22:%22loki%22,%22uid%22:%22loki%22%7D,%22expr%22:%22%7Bservice%3D%5C%22backend%5C%22,%20level%3D%5C%22warn%5C%22%7D%22%7D%5D,%22range%22:%7B%22from%22:%22now-1h%22,%22to%22:%22now%22%7D%7D",
+              "targetBlank": false
+            }
+          ],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               { "color": "green", "value": null },
-              { "color": "orange", "value": 50 }
+              { "color": "orange", "value": 1 }
             ]
           },
           "unit": "short"
@@ -158,7 +172,7 @@
           "refId": "A"
         }
       ],
-      "title": "Warnings (last range)",
+      "title": "Warnings (last range) → клик открывает Explore",
       "type": "stat"
     },
     {
@@ -197,7 +211,34 @@
     },
     {
       "datasource": { "type": "loki", "uid": "loki" },
-      "gridPos": { "h": 16, "w": 24, "x": 0, "y": 12 },
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 12 },
+      "id": 6,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": true,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "editorMode": "code",
+          "expr": "{service=\"backend\", level=~\"error|warn\"} | json",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "Recent warnings & errors",
+      "description": "Только warn/error от backend. Клик по строке раскрывает JSON-поля (req, res, msg, context).",
+      "type": "logs"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 14, "w": 24, "x": 0, "y": 24 },
       "id": 5,
       "options": {
         "dedupStrategy": "none",
@@ -218,7 +259,7 @@
           "refId": "A"
         }
       ],
-      "title": "Backend log stream",
+      "title": "Backend log stream (all levels)",
       "type": "logs"
     }
   ],
@@ -232,5 +273,5 @@
   "timezone": "",
   "title": "PM-Task — Backend logs",
   "uid": "pmtask-backend-logs",
-  "version": 1
+  "version": 2
 }

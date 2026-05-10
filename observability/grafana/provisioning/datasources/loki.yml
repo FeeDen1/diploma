@@ -5,6 +5,10 @@ apiVersion: 1
 
 datasources:
   - name: Loki
+    # Фиксированный UID — на него ссылаются дашборды в /var/lib/grafana/dashboards.
+    # Без явного значения Grafana сгенерировала бы рандомный, и при пересоздании
+    # контейнера старые дашборды переставали бы находить datasource.
+    uid: loki
     type: loki
     access: proxy
     url: http://loki:3100
