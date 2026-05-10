@@ -1,0 +1,39 @@
+# Prometheus — TSDB и движок сбора метрик.
+#
+# Скейпит три источника:
+#   1) самого себя (sanity-check, что сборщик жив)
+#   2) node-exporter — host-метрики (CPU, RAM, Disk, Net)
+#   3) cAdvisor — per-container метрики (CPU/RAM/IO каждого docker-контейнера)
+#
+# Retention 15 дней — в .yml не задаётся, выставляется флагом
+# `--storage.tsdb.retention.time=15d` в command compose-файла.
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    project: pmtask
+
+scrape_configs:
+  # Метрики самого Prometheus — полезно убедиться что он жив,
+  # и видеть нагрузку TSDB на дашборде, если когда-то понадобится.
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # node-exporter — стандартный экспортёр host-системы. В docker-compose
+  # он живёт в сетке `default`, поэтому достучимся по hostname сервиса.
+  - job_name: node-exporter
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          instance: pmtask-vps
+
+  # cAdvisor — метрики каждого контейнера. Имя контейнера попадает как
+  # лейбл `name`, что позволяет фильтровать в дашбордах
+  # (e.g. {name="pmtask-backend-1"}).
+  - job_name: cadvisor
+    static_configs:
+      - targets: ['cadvisor:8080']
+        labels:
+          instance: pmtask-vps

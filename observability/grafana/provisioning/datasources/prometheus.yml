@@ -1,0 +1,17 @@
+# Auto-provisioning datasource для Prometheus в Grafana.
+# Аналогично Loki: при старте Grafana подключается без ручной настройки.
+
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    # Фиксированный UID — на него ссылается dashboard `server-metrics.json`.
+    # Без явного UID Grafana сгенерирует случайный, и дашборды сломаются.
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: false # default остаётся Loki — логи смотрят чаще
+    editable: false
+    jsonData:
+      timeInterval: 15s # совпадает со scrape_interval Prometheus
