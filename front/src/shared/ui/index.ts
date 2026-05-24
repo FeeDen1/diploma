@@ -4,6 +4,7 @@ export { Card } from './Card';
 export { Badge } from './Badge';
 export { SearchBar } from './SearchBar';
 export { Avatar } from './Avatar';
+export { UploadedImage } from './UploadedImage';
 export { FilterChip } from './FilterChip';
 export { Modal } from './Modal';
 export { EmptyState } from './EmptyState';

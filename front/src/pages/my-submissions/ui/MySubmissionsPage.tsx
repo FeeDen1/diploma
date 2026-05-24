@@ -1,17 +1,12 @@
 import React from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  Image,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, FlatList, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Badge } from '@shared/ui/Badge';
 import { Button } from '@shared/ui/Button';
 import { Card } from '@shared/ui/Card';
 import { EmptyState } from '@shared/ui/EmptyState';
 import { ScreenHeader } from '@shared/ui/ScreenHeader';
+import { UploadedImage } from '@shared/ui/UploadedImage';
 import { AlbumsIcon } from '@shared/ui/icons';
 import { useConfirm, useToast } from '@shared/ui';
 import { extractErrorMessage } from '@shared/api';
@@ -117,11 +112,7 @@ export function MySubmissionsPage(): React.ReactElement {
         </View>
 
         {item.submissionFileUrl ? (
-          <Image
-            source={{ uri: item.submissionFileUrl }}
-            style={{ width: '100%', height: 180, borderRadius: 12 }}
-            resizeMode="contain"
-          />
+          <UploadedImage uri={item.submissionFileUrl} />
         ) : null}
 
         {item.status === 'pending' ? (
