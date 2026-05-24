@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import { Image, type ImageStyle, type StyleProp } from 'react-native';
+import {
+  Image,
+  TouchableOpacity,
+  type ImageStyle,
+  type StyleProp,
+} from 'react-native';
+import ImageView from 'react-native-image-viewing';
 
 interface UploadedImageProps {
   /** URL картинки. */
@@ -18,11 +24,16 @@ interface UploadedImageProps {
   fallbackAspectRatio?: number;
   /** Доп. стили картинки (например marginTop). */
   style?: StyleProp<ImageStyle>;
+  /**
+   * Открывать ли фото на весь экран по тапу — с pinch-to-zoom, double-tap
+   * и свайпом для закрытия. По умолчанию true.
+   */
+  zoomable?: boolean;
 }
 
 /**
  * Картинка пользовательской загрузки, которая показывается ЦЕЛИКОМ в своих
- * реальных пропорциях.
+ * реальных пропорциях, а по тапу открывается на весь экран с зумом.
  *
  * Обычный <Image> с фиксированной высотой проигрывает в любом случае:
  *  - resizeMode="cover"   — заполняет контейнер, но обрезает края фото;
@@ -31,10 +42,11 @@ interface UploadedImageProps {
  *
  * UploadedImage читает фактические width/height файла из onLoad-события и
  * подгоняет aspectRatio контейнера ровно под фото. Картинка не режется и
- * не «плавает» в пустоте — контейнер всегда повторяет её форму.
+ * не «плавает» в пустоте.
  *
- * maxHeight ограничивает совсем вытянутые вертикальные фото; в этом редком
- * случае срабатывает resizeMode="contain" как страховка.
+ * Тап по картинке открывает полноэкранный просмотрщик (react-native-image-
+ * viewing): pinch-to-zoom, double-tap, свайп вниз для закрытия. Удобно
+ * рассматривать фото-доказательства сабмишенов в деталях.
  */
 export function UploadedImage({
   uri,
@@ -42,10 +54,12 @@ export function UploadedImage({
   maxHeight = 420,
   fallbackAspectRatio = 4 / 3,
   style,
+  zoomable = true,
 }: UploadedImageProps): React.ReactElement {
   const [aspectRatio, setAspectRatio] = useState(fallbackAspectRatio);
+  const [viewerVisible, setViewerVisible] = useState(false);
 
-  return (
+  const image = (
     <Image
       source={{ uri }}
       style={[
@@ -70,5 +84,27 @@ export function UploadedImage({
         }
       }}
     />
+  );
+
+  if (!zoomable) return image;
+
+  return (
+    <>
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPress={() => setViewerVisible(true)}
+      >
+        {image}
+      </TouchableOpacity>
+
+      <ImageView
+        images={[{ uri }]}
+        imageIndex={0}
+        visible={viewerVisible}
+        onRequestClose={() => setViewerVisible(false)}
+        swipeToCloseEnabled
+        doubleTapToZoomEnabled
+      />
+    </>
   );
 }
