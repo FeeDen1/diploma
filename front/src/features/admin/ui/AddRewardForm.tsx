@@ -148,7 +148,7 @@ export function AddRewardForm(): React.ReactElement {
           <Image
             source={{ uri: imageUri }}
             style={{ width: '100%', height: 180 }}
-            resizeMode="cover"
+            resizeMode="contain"
           />
         ) : (
           <View className="h-32 items-center justify-center">

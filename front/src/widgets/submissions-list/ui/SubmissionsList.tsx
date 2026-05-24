@@ -82,7 +82,7 @@ export function SubmissionsList({ taskId }: Props): React.ReactElement {
               <Image
                 source={{ uri: item.submissionFileUrl }}
                 style={{ width: '100%', height: 220, borderRadius: 12 }}
-                resizeMode="cover"
+                resizeMode="contain"
               />
             ) : null}
 

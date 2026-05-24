@@ -156,7 +156,7 @@ export function SubmitAchievementSheet({
             <Image
               source={{ uri: achievement.coverUrl }}
               style={{ width: '100%', height: 160, borderRadius: 16 }}
-              resizeMode="cover"
+              resizeMode="contain"
             />
           ) : null}
 
@@ -197,7 +197,7 @@ export function SubmitAchievementSheet({
               <Image
                 source={{ uri: asset.uri }}
                 style={{ width: '100%', height: '100%' }}
-                resizeMode="cover"
+                resizeMode="contain"
               />
             ) : (
               <View className="flex-1 items-center justify-center">

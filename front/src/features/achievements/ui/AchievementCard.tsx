@@ -67,7 +67,7 @@ export function AchievementCard({
             <Image
               source={{ uri: achievement.coverUrl }}
               style={{ width: '100%', height: '100%' }}
-              resizeMode="cover"
+              resizeMode="contain"
             />
           ) : (
             <TrophyIcon size={48} color="rgb(148 163 184)" />

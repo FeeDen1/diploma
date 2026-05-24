@@ -28,7 +28,7 @@ export function MyOrdersPage(): React.ReactElement {
             <Image
               source={{ uri: item.imageUrl }}
               style={{ width: '100%', height: '100%' }}
-              resizeMode="cover"
+              resizeMode="contain"
             />
           ) : null}
         </View>

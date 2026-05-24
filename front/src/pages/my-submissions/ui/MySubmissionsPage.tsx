@@ -120,7 +120,7 @@ export function MySubmissionsPage(): React.ReactElement {
           <Image
             source={{ uri: item.submissionFileUrl }}
             style={{ width: '100%', height: 180, borderRadius: 12 }}
-            resizeMode="cover"
+            resizeMode="contain"
           />
         ) : null}
 
