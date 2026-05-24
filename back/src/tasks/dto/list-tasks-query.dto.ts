@@ -15,9 +15,15 @@ import {
   type AchievementStatus,
 } from './achievement-status';
 
-export type TasksSort = 'newest' | 'oldest' | 'points-asc' | 'points-desc';
+export type TasksSort =
+  | 'deadline'
+  | 'newest'
+  | 'oldest'
+  | 'points-asc'
+  | 'points-desc';
 
 export const TASKS_SORTS: TasksSort[] = [
+  'deadline',
   'newest',
   'oldest',
   'points-asc',
@@ -75,8 +81,10 @@ export class ListTasksQueryDto {
 
   @ApiPropertyOptional({
     enum: TASKS_SORTS,
-    description: 'Сортировка (засчитанные всегда уходят в конец)',
-    default: 'newest',
+    description:
+      'Сортировка (засчитанные всегда уходят в конец). По умолчанию ' +
+      'deadline — сначала задания с ближайшим сроком, бессрочные ниже.',
+    default: 'deadline',
   })
   @IsOptional()
   @IsEnum(TASKS_SORTS, { message: 'Некорректная сортировка' })

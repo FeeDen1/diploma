@@ -42,7 +42,7 @@ export class TasksService {
   }> {
     const limit = query.limit ?? 20;
     const offset = query.offset ?? 0;
-    const sort: TasksSort = query.sort ?? 'newest';
+    const sort: TasksSort = query.sort ?? 'deadline';
 
     // Перед чтением «прибиваем» просрочку — крон тикает раз в час, а
     // пользователь должен видеть актуальную картину сразу. Это дешёвый

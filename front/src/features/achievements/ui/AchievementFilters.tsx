@@ -153,9 +153,6 @@ function AchievementFiltersSheet({
             onPress={() => toggleState(state)}
           />
         ))}
-      </FilterSection>
-
-      <FilterSection title="Срок">
         <SelectChip
           label="Только с дедлайном"
           selected={draft.temporalOnly}

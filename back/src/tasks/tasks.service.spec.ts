@@ -81,11 +81,11 @@ describe('TasksService.listTasks', () => {
     );
   });
 
-  it('по умолчанию limit=20, offset=0, sort=newest', async () => {
+  it('по умолчанию limit=20, offset=0, sort=deadline', async () => {
     await service.listTasks(student, {});
 
     expect(tasksRepository.findAndCountForUser).toHaveBeenCalledWith(
-      expect.objectContaining({ limit: 20, offset: 0, sort: 'newest' }),
+      expect.objectContaining({ limit: 20, offset: 0, sort: 'deadline' }),
     );
   });
 });

@@ -38,8 +38,14 @@ export interface FindTasksForUserOptions {
 /**
  * Вторичная сортировка (после «засчитанные — вниз»). SQL-фрагменты, потому
  * что основной запрос постранично гоняется через $queryRaw.
+ *
+ * deadline: сначала задания с ближайшим сроком (меньше оставшегося времени —
+ * выше), бессрочные (expires_at IS NULL) уходят в конец. now() для всех строк
+ * запроса одинаков, поэтому сортировка по expires_at эквивалентна сортировке
+ * по оставшемуся времени.
  */
 const SECONDARY_SORT: Record<TasksSort, Prisma.Sql> = {
+  deadline: Prisma.sql`t.expires_at ASC NULLS LAST, t.created_at DESC`,
   newest: Prisma.sql`t.created_at DESC`,
   oldest: Prisma.sql`t.created_at ASC`,
   'points-desc': Prisma.sql`t.points DESC, t.created_at DESC`,

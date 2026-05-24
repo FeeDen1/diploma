@@ -26,7 +26,7 @@ export function AchievementsList(): React.ReactElement {
   const [filters, setFilters] = useState<AchievementFiltersValue>(
     EMPTY_ACHIEVEMENT_FILTERS,
   );
-  const [sort] = useState<TasksSort>('newest');
+  const [sort] = useState<TasksSort>('deadline');
   const [active, setActive] = useState<{
     achievement: AchievementView;
     resubmitId?: string;

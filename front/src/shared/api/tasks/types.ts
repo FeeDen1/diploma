@@ -78,9 +78,15 @@ export interface UpdateTaskDto {
   expiresAt?: string | null;
 }
 
-export type TasksSort = 'newest' | 'oldest' | 'points-asc' | 'points-desc';
+export type TasksSort =
+  | 'deadline'
+  | 'newest'
+  | 'oldest'
+  | 'points-asc'
+  | 'points-desc';
 
 export const TASKS_SORTS: TasksSort[] = [
+  'deadline',
   'newest',
   'oldest',
   'points-asc',
@@ -88,6 +94,7 @@ export const TASKS_SORTS: TasksSort[] = [
 ];
 
 export const TASKS_SORT_LABELS: Record<TasksSort, string> = {
+  deadline: 'Сначала срочные',
   newest: 'Сначала новые',
   oldest: 'Сначала старые',
   'points-desc': 'Больше баллов',
