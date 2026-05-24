@@ -1,4 +1,8 @@
-import type { TaskCategory, TaskType } from '@shared/api/tasks';
+import type {
+  AchievementStatus,
+  TaskCategory,
+  TaskType,
+} from '@shared/api/tasks';
 
 export interface Task {
   id: string;
@@ -13,6 +17,8 @@ export interface Task {
   createdAt: Date;
   isExpired: boolean;
   isArchived: boolean;
+  /** Статус задания для текущего пользователя. null — эндпоинт без статуса. */
+  status: AchievementStatus | null;
 }
 
-export type { TaskCategory, TaskType };
+export type { AchievementStatus, TaskCategory, TaskType };

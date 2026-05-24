@@ -23,3 +23,4 @@ export { AlertIcon } from './AlertIcon';
 export { WarningIcon } from './WarningIcon';
 export { EditIcon } from './EditIcon';
 export { ArchiveIcon } from './ArchiveIcon';
+export { FilterIcon } from './FilterIcon';

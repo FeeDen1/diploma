@@ -22,7 +22,9 @@ import type { Task } from './types';
 const PAGE_SIZE = 20;
 
 interface InfiniteTasksFilters {
-  category?: ListTasksQuery['category'];
+  categories?: ListTasksQuery['categories'];
+  states?: ListTasksQuery['states'];
+  temporalOnly?: ListTasksQuery['temporalOnly'];
   sort?: ListTasksQuery['sort'];
   includeArchived?: ListTasksQuery['includeArchived'];
 }

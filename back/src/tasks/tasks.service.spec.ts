@@ -28,7 +28,9 @@ describe('TasksService.listTasks', () => {
   beforeEach(() => {
     tasksRepository = {
       archiveExpired: jest.fn().mockResolvedValue({ count: 0 }),
-      findAndCount: jest.fn().mockResolvedValue({ items: [], total: 0 }),
+      findAndCountForUser: jest
+        .fn()
+        .mockResolvedValue({ items: [], total: 0 }),
       findAll: jest.fn(),
       findById: jest.fn(),
       create: jest.fn(),
@@ -50,7 +52,7 @@ describe('TasksService.listTasks', () => {
   it('admin с includeArchived=true получает архив', async () => {
     await service.listTasks(admin, { includeArchived: true });
 
-    expect(tasksRepository.findAndCount).toHaveBeenCalledWith(
+    expect(tasksRepository.findAndCountForUser).toHaveBeenCalledWith(
       expect.objectContaining({ includeArchived: true }),
     );
   });
@@ -58,7 +60,7 @@ describe('TasksService.listTasks', () => {
   it('admin без флага не получает архив', async () => {
     await service.listTasks(admin, {});
 
-    expect(tasksRepository.findAndCount).toHaveBeenCalledWith(
+    expect(tasksRepository.findAndCountForUser).toHaveBeenCalledWith(
       expect.objectContaining({ includeArchived: false }),
     );
   });
@@ -66,7 +68,7 @@ describe('TasksService.listTasks', () => {
   it('adapter не может видеть архив даже с includeArchived=true', async () => {
     await service.listTasks(adapter, { includeArchived: true });
 
-    expect(tasksRepository.findAndCount).toHaveBeenCalledWith(
+    expect(tasksRepository.findAndCountForUser).toHaveBeenCalledWith(
       expect.objectContaining({ includeArchived: false }),
     );
   });
@@ -74,7 +76,7 @@ describe('TasksService.listTasks', () => {
   it('student не может видеть архив даже с includeArchived=true', async () => {
     await service.listTasks(student, { includeArchived: true });
 
-    expect(tasksRepository.findAndCount).toHaveBeenCalledWith(
+    expect(tasksRepository.findAndCountForUser).toHaveBeenCalledWith(
       expect.objectContaining({ includeArchived: false }),
     );
   });
@@ -82,7 +84,7 @@ describe('TasksService.listTasks', () => {
   it('по умолчанию limit=20, offset=0, sort=newest', async () => {
     await service.listTasks(student, {});
 
-    expect(tasksRepository.findAndCount).toHaveBeenCalledWith(
+    expect(tasksRepository.findAndCountForUser).toHaveBeenCalledWith(
       expect.objectContaining({ limit: 20, offset: 0, sort: 'newest' }),
     );
   });

@@ -3,4 +3,13 @@
 export { AchievementFilters } from './ui/AchievementFilters';
 export { AchievementCard } from './ui/AchievementCard';
 export { SubmitAchievementSheet } from './ui/SubmitAchievementSheet';
-export { useAchievementsView } from './lib/useAchievementsView';
+export {
+  useAchievementsView,
+  type AchievementView,
+  type AchievementStatus,
+} from './lib/useAchievementsView';
+export {
+  EMPTY_ACHIEVEMENT_FILTERS,
+  countActiveFilters,
+  type AchievementFiltersValue,
+} from './lib/filters';

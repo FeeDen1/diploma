@@ -21,6 +21,30 @@ export const TASK_CATEGORIES: TaskCategory[] = [
   'self_realization',
 ];
 
+/**
+ * Статус задания с точки зрения конкретного студента. Вычисляется на бэке
+ * (LEFT JOIN сабмишенов пользователя) и приходит в ReadTaskDto.list.
+ */
+export type AchievementStatus =
+  | 'available'
+  | 'pending'
+  | 'approved'
+  | 'rejected';
+
+export const ACHIEVEMENT_STATUSES: AchievementStatus[] = [
+  'available',
+  'pending',
+  'approved',
+  'rejected',
+];
+
+export const ACHIEVEMENT_STATUS_LABELS: Record<AchievementStatus, string> = {
+  available: 'Активные',
+  pending: 'В рассмотрении',
+  approved: 'Засчитанные',
+  rejected: 'Отклонённые',
+};
+
 export interface ReadTaskDto {
   id: string;
   title: string;
@@ -32,6 +56,8 @@ export interface ReadTaskDto {
   expiresAt: string | null;
   archivedAt: string | null;
   createdAt: string;
+  /** Статус для текущего пользователя. null — эндпоинт не вычисляет статус. */
+  status: AchievementStatus | null;
 }
 
 export interface CreateTaskDto {
@@ -69,7 +95,12 @@ export const TASKS_SORT_LABELS: Record<TasksSort, string> = {
 };
 
 export interface ListTasksQuery {
-  category?: TaskCategory;
+  /** Фильтр по категориям (мультиселект). Пустой массив — без фильтра. */
+  categories?: TaskCategory[];
+  /** Фильтр по состоянию задания для текущего пользователя (мультиселект). */
+  states?: AchievementStatus[];
+  /** Только задания с дедлайном (expiresAt задан). */
+  temporalOnly?: boolean;
   sort?: TasksSort;
   limit?: number;
   offset?: number;

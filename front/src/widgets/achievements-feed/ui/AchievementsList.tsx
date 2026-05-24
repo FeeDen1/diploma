@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ActivityIndicator, FlatList, View } from 'react-native';
 import { EmptyState } from '@shared/ui/EmptyState';
 import { TrophyIcon } from '@shared/ui/icons';
-import type { TaskCategory, TasksSort } from '@shared/api/tasks';
+import type { TasksSort } from '@shared/api/tasks';
 import {
   useAchievementsView,
   type AchievementView,
@@ -10,7 +10,9 @@ import {
 import {
   AchievementCard,
   AchievementFilters,
+  EMPTY_ACHIEVEMENT_FILTERS,
   SubmitAchievementSheet,
+  type AchievementFiltersValue,
 } from '@features/achievements';
 
 /**
@@ -21,17 +23,16 @@ import {
  * Использует виртуализованный FlatList с infinite-scroll и pull-to-refresh.
  */
 export function AchievementsList(): React.ReactElement {
-  const [category, setCategory] = useState<TaskCategory | null>(null);
+  const [filters, setFilters] = useState<AchievementFiltersValue>(
+    EMPTY_ACHIEVEMENT_FILTERS,
+  );
   const [sort] = useState<TasksSort>('newest');
   const [active, setActive] = useState<{
     achievement: AchievementView;
     resubmitId?: string;
   } | null>(null);
 
-  const view = useAchievementsView({
-    category: category ?? undefined,
-    sort,
-  });
+  const view = useAchievementsView({ filters, sort });
 
   if (view.isLoading) {
     return (
@@ -43,7 +44,7 @@ export function AchievementsList(): React.ReactElement {
 
   return (
     <View className="flex-1 bg-background">
-      <AchievementFilters selected={category} onSelect={setCategory} />
+      <AchievementFilters value={filters} onChange={setFilters} />
 
       <FlatList
         data={view.data}

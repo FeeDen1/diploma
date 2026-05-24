@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Task, TaskCategory, TaskType } from '../../../generated/prisma/client';
+import { ACHIEVEMENT_STATUSES, type AchievementStatus } from './achievement-status';
 
 export class ReadTaskDto {
   @ApiProperty({ example: 'uuid', description: 'Уникальный идентификатор' })
@@ -53,9 +54,19 @@ export class ReadTaskDto {
   @ApiProperty({ description: 'Дата создания' })
   readonly createdAt: Date;
 
+  @ApiPropertyOptional({
+    enum: ACHIEVEMENT_STATUSES,
+    description:
+      'Статус задания для текущего пользователя (available/pending/' +
+      'approved/rejected). null — если эндпоинт не вычисляет статус.',
+    nullable: true,
+  })
+  readonly status: AchievementStatus | null;
+
   static fromEntity(
     task: Task,
     taskFileUrl: string | null = null,
+    status: AchievementStatus | null = null,
   ): ReadTaskDto {
     return Object.assign(new ReadTaskDto(), {
       id: task.id,
@@ -68,6 +79,7 @@ export class ReadTaskDto {
       expiresAt: task.expiresAt,
       archivedAt: task.archivedAt,
       createdAt: task.createdAt,
+      status,
     });
   }
 }

@@ -4,28 +4,20 @@ import {
   useInfiniteTasks,
   type Task,
 } from '@entities/task';
-import {
-  useMySubmissions,
-  type MySubmission,
-  type SubmissionStatus,
-} from '@entities/submission';
-import type { TaskCategory, TasksSort } from '@shared/api/tasks';
+import { useMySubmissions, type MySubmission } from '@entities/submission';
+import type { AchievementStatus, TasksSort } from '@shared/api/tasks';
+import type { AchievementFiltersValue } from './filters';
 
-export type AchievementStatus = 'available' | 'pending' | 'approved' | 'rejected';
+export type { AchievementStatus };
 
 export interface AchievementView extends Task {
+  /** Статус приходит с бэка; available — если задание ещё не сдавалось. */
   status: AchievementStatus;
   submission?: MySubmission;
 }
 
-const SUBMISSION_TO_STATUS: Record<SubmissionStatus, AchievementStatus> = {
-  pending: 'pending',
-  approved: 'approved',
-  rejected: 'rejected',
-};
-
 export interface UseAchievementsViewArgs {
-  category?: TaskCategory;
+  filters: AchievementFiltersValue;
   sort?: TasksSort;
 }
 
@@ -41,13 +33,18 @@ export interface AchievementsViewResult {
 
 /**
  * Соединяет постраничный fetch заданий с моими сдачами.
- * Возвращает плоский массив, удобный для FlatList, плюс контролы пагинации.
+ *
+ * Статус и сортировка («засчитанные — вниз») считаются на бэке, поэтому
+ * клиент берёт status прямо из задания. Сдачи нужны лишь для режима
+ * перезаливки отклонённой работы — отсюда submission рядом со статусом.
  */
 export function useAchievementsView(
-  args: UseAchievementsViewArgs = {},
+  args: UseAchievementsViewArgs,
 ): AchievementsViewResult {
   const tasksQuery = useInfiniteTasks({
-    category: args.category,
+    categories: args.filters.categories,
+    states: args.filters.states,
+    temporalOnly: args.filters.temporalOnly,
     sort: args.sort,
   });
   const submissionsQuery = useMySubmissions();
@@ -62,13 +59,11 @@ export function useAchievementsView(
     (submissionsQuery.data ?? []).forEach((submission) =>
       submissionByTaskId.set(submission.taskId, submission),
     );
-    return tasks.map<AchievementView>((task) => {
-      const submission = submissionByTaskId.get(task.id);
-      const status: AchievementStatus = submission
-        ? SUBMISSION_TO_STATUS[submission.status]
-        : 'available';
-      return { ...task, status, submission };
-    });
+    return tasks.map<AchievementView>((task) => ({
+      ...task,
+      status: task.status ?? 'available',
+      submission: submissionByTaskId.get(task.id),
+    }));
   }, [tasks, submissionsQuery.data]);
 
   const lastPage = tasksQuery.data?.pages.at(-1);

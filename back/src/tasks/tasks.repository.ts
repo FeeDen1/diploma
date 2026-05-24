@@ -2,10 +2,16 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma';
 import { Prisma, TaskCategory } from '../../generated/prisma/client';
 import type { TasksSort } from './dto/list-tasks-query.dto';
+import type { AchievementStatus } from './dto/achievement-status';
 
 const WITH_FILE = { taskFile: true } satisfies Prisma.TaskInclude;
 
 export type TaskWithFile = Prisma.TaskGetPayload<{ include: typeof WITH_FILE }>;
+
+/** Задание + вычисленный статус относительно конкретного пользователя. */
+export type TaskForUser = TaskWithFile & {
+  achievementStatus: AchievementStatus;
+};
 
 export interface FindTasksOptions {
   /** Включать архивированные (soft-deleted) задания */
@@ -14,21 +20,30 @@ export interface FindTasksOptions {
   includeExpired?: boolean;
   /** Текущее время для фильтрации по сроку (по умолчанию now()) */
   now?: Date;
-  /** Фильтр по категории */
-  category?: TaskCategory;
 }
 
-export interface PaginatedTasksOptions extends FindTasksOptions {
-  sort?: TasksSort;
+/** Параметры постраничной выборки заданий для конкретного пользователя. */
+export interface FindTasksForUserOptions {
+  userId: string;
+  includeArchived: boolean;
+  includeExpired: boolean;
+  categories?: TaskCategory[];
+  states?: AchievementStatus[];
+  temporalOnly?: boolean;
+  sort: TasksSort;
   limit: number;
   offset: number;
 }
 
-const SORT_ORDER: Record<TasksSort, Prisma.TaskOrderByWithRelationInput[]> = {
-  newest: [{ createdAt: 'desc' }],
-  oldest: [{ createdAt: 'asc' }],
-  'points-desc': [{ points: 'desc' }, { createdAt: 'desc' }],
-  'points-asc': [{ points: 'asc' }, { createdAt: 'desc' }],
+/**
+ * Вторичная сортировка (после «засчитанные — вниз»). SQL-фрагменты, потому
+ * что основной запрос постранично гоняется через $queryRaw.
+ */
+const SECONDARY_SORT: Record<TasksSort, Prisma.Sql> = {
+  newest: Prisma.sql`t.created_at DESC`,
+  oldest: Prisma.sql`t.created_at ASC`,
+  'points-desc': Prisma.sql`t.points DESC, t.created_at DESC`,
+  'points-asc': Prisma.sql`t.points ASC, t.created_at DESC`,
 };
 
 @Injectable()
@@ -47,22 +62,104 @@ export class TasksRepository {
     });
   }
 
-  async findAndCount(
-    options: PaginatedTasksOptions,
-  ): Promise<{ items: TaskWithFile[]; total: number }> {
-    const where = this.buildVisibilityWhere(options);
-    const orderBy = SORT_ORDER[options.sort ?? 'newest'];
+  /**
+   * Постраничная выборка заданий с вычисленным статусом для конкретного юзера.
+   *
+   * Статус (available/pending/approved/rejected) нельзя посчитать в Prisma
+   * query-API — он требует LEFT JOIN на сабмишены юзера и ORDER BY по
+   * вычисленному полю. Поэтому отбор id + сортировка + фильтры идут raw SQL,
+   * а «гидрация» (подтягивание taskFile-relation) — обычным Prisma findMany.
+   *
+   * Сортировка всегда: «засчитанные — в самый конец», внутри — выбранный sort.
+   */
+  async findAndCountForUser(
+    options: FindTasksForUserOptions,
+  ): Promise<{ items: TaskForUser[]; total: number }> {
+    // Выражение вычисляемого статуса. Используется и в SELECT, и в WHERE,
+    // и в ORDER BY — поэтому вынесено в общий фрагмент.
+    const stateExpr = Prisma.sql`COALESCE(s.status::text, 'available')`;
 
-    const [items, total] = await this.prisma.$transaction([
-      this.prisma.task.findMany({
-        where,
-        orderBy,
-        include: WITH_FILE,
-        skip: options.offset,
-        take: options.limit,
-      }),
-      this.prisma.task.count({ where }),
-    ]);
+    // LEFT JOIN сабмишена ТЕКУЩЕГО юзера. Пара (task_id, student_id)
+    // уникальна (@@unique в схеме) — на задание максимум одна строка,
+    // дублей от JOIN не будет.
+    const fromJoin = Prisma.sql`
+      FROM tasks t
+      LEFT JOIN task_submissions s
+        ON s.task_id = t.id AND s.student_id = ${options.userId}::uuid
+    `;
+
+    const conditions: Prisma.Sql[] = [];
+    if (!options.includeArchived) {
+      conditions.push(Prisma.sql`t.archived_at IS NULL`);
+    }
+    if (!options.includeExpired) {
+      conditions.push(
+        Prisma.sql`(t.expires_at IS NULL OR t.expires_at > now())`,
+      );
+    }
+    if (options.categories && options.categories.length > 0) {
+      conditions.push(
+        Prisma.sql`t.category::text IN (${Prisma.join(options.categories)})`,
+      );
+    }
+    if (options.temporalOnly) {
+      conditions.push(Prisma.sql`t.expires_at IS NOT NULL`);
+    }
+    if (options.states && options.states.length > 0) {
+      conditions.push(
+        Prisma.sql`${stateExpr} IN (${Prisma.join(options.states)})`,
+      );
+    }
+
+    const whereSql =
+      conditions.length > 0
+        ? Prisma.sql`WHERE ${Prisma.join(conditions, ' AND ')}`
+        : Prisma.empty;
+
+    // 1. Отбираем id заданий в нужном порядке (с фильтрами и пагинацией).
+    const rows = await this.prisma.$queryRaw<
+      { id: string; state: string }[]
+    >(Prisma.sql`
+      SELECT t.id AS id, ${stateExpr} AS state
+      ${fromJoin}
+      ${whereSql}
+      ORDER BY (${stateExpr} = 'approved') ASC, ${SECONDARY_SORT[options.sort]}
+      LIMIT ${options.limit} OFFSET ${options.offset}
+    `);
+
+    // 2. Считаем общее количество под те же фильтры (для пагинации).
+    const countRows = await this.prisma.$queryRaw<
+      { count: bigint }[]
+    >(Prisma.sql`
+      SELECT COUNT(*) AS count
+      ${fromJoin}
+      ${whereSql}
+    `);
+    const total = Number(countRows[0]?.count ?? 0);
+
+    if (rows.length === 0) {
+      return { items: [], total };
+    }
+
+    // 3. «Гидрация»: подтягиваем полные задания с taskFile-relation.
+    const ids = rows.map((row) => row.id);
+    const tasks = await this.prisma.task.findMany({
+      where: { id: { in: ids } },
+      include: WITH_FILE,
+    });
+    const taskById = new Map(tasks.map((task) => [task.id, task]));
+
+    // 4. Восстанавливаем порядок из raw-запроса и приклеиваем статус.
+    const items: TaskForUser[] = [];
+    for (const row of rows) {
+      const task = taskById.get(row.id);
+      if (task) {
+        items.push({
+          ...task,
+          achievementStatus: row.state as AchievementStatus,
+        });
+      }
+    }
 
     return { items, total };
   }
@@ -138,10 +235,6 @@ export class TasksRepository {
     if (!options.includeExpired) {
       const now = options.now ?? new Date();
       where.OR = [{ expiresAt: null }, { expiresAt: { gt: now } }];
-    }
-
-    if (options.category) {
-      where.category = options.category;
     }
 
     return where;

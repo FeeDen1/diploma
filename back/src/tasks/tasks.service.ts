@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { TasksRepository, TaskWithFile } from './tasks.repository';
+import { TasksRepository, TaskForUser, TaskWithFile } from './tasks.repository';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { ListTasksQueryDto, TasksSort } from './dto/list-tasks-query.dto';
@@ -35,7 +35,7 @@ export class TasksService {
     user: TokenPayload,
     query: ListTasksQueryDto,
   ): Promise<{
-    items: TaskWithFile[];
+    items: TaskForUser[];
     total: number;
     limit: number;
     offset: number;
@@ -53,10 +53,15 @@ export class TasksService {
     const includeArchived =
       user.role === UserRole.admin && query.includeArchived === true;
 
-    const { items, total } = await this.tasksRepository.findAndCount({
-      ...this.visibilityFor(),
+    const { items, total } = await this.tasksRepository.findAndCountForUser({
+      userId: user.id,
       includeArchived,
-      category: query.category,
+      // Просрочку archiveExpired() уже перевела в архив, поэтому отдельно
+      // включать просроченные не нужно — для всех ролей includeExpired=false.
+      includeExpired: false,
+      categories: query.categories,
+      states: query.states,
+      temporalOnly: query.temporalOnly,
       sort,
       limit,
       offset,

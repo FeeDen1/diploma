@@ -19,5 +19,6 @@ export function toTaskDomain(dto: ReadTaskDto): Task {
     createdAt: new Date(dto.createdAt),
     isExpired: !!expiresAt && expiresAt < now,
     isArchived: !!archivedAt,
+    status: dto.status,
   };
 }

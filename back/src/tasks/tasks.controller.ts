@@ -61,7 +61,11 @@ export class TasksController {
       query,
     );
     const dtos = items.map((task) =>
-      ReadTaskDto.fromEntity(task, this.tasksService.getTaskFileUrl(task)),
+      ReadTaskDto.fromEntity(
+        task,
+        this.tasksService.getTaskFileUrl(task),
+        task.achievementStatus,
+      ),
     );
     return PaginatedTasksDto.create(dtos, total, limit, offset);
   }

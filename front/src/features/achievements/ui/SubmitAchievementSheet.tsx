@@ -194,7 +194,7 @@ export function SubmitAchievementSheet({
               <Image
                 source={{ uri: asset.uri }}
                 style={{ width: '100%', height: '100%' }}
-                resizeMode="cover"
+                resizeMode="contain"
               />
             ) : (
               <View className="flex-1 items-center justify-center">
