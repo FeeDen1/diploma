@@ -6,6 +6,7 @@ import {
   type OtpPendingDto,
 } from '@shared/api/auth';
 import { usersApi } from '@shared/api/users';
+import { notificationsApi } from '@shared/api/notifications';
 import { queryKeys } from '@shared/api';
 import { storage } from '@shared/lib/storage';
 
@@ -100,6 +101,21 @@ export function useLogout() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async () => {
+      // 1. Отвязываем push-токен устройства от аккаунта — ПОКА access token
+      //    ещё валиден. Если сделать это после clearTokens, DELETE-запрос
+      //    уйдёт без авторизации, бэк ответит 401, и устройство останется
+      //    привязанным — разлогиненный юзер продолжит получать чужие push'и.
+      const pushToken = await storage.getPushToken();
+      if (pushToken) {
+        try {
+          await notificationsApi.unregisterDeviceToken({ token: pushToken });
+          await storage.clearPushToken();
+        } catch {
+          // не блокируем logout, если бэк не принял отвязку
+        }
+      }
+
+      // 2. Инвалидируем refresh-токен на бэке.
       try {
         await authApi.logout();
       } catch {

@@ -6,6 +6,10 @@ const KEYS = {
   ONBOARDING_COMPLETED: 'onboarding_completed',
   PROFILE_SETUP_COMPLETED: 'profile_setup_completed',
   THEME_MODE: 'theme_mode',
+  // Expo Push Token текущего устройства. Храним, чтобы при logout отвязать
+  // его от аккаунта на бэке ДО очистки JWT — иначе DELETE-запрос ушёл бы
+  // без авторизации и push'и продолжали бы идти разлогиненному юзеру.
+  PUSH_TOKEN: 'push_token',
 } as const;
 
 export type StoredThemeMode = 'light' | 'dark';
@@ -57,6 +61,18 @@ export const storage = {
 
   async setProfileSetupCompleted(): Promise<void> {
     await SecureStore.setItemAsync(KEYS.PROFILE_SETUP_COMPLETED, 'true');
+  },
+
+  async getPushToken(): Promise<string | null> {
+    return SecureStore.getItemAsync(KEYS.PUSH_TOKEN);
+  },
+
+  async setPushToken(token: string): Promise<void> {
+    await SecureStore.setItemAsync(KEYS.PUSH_TOKEN, token);
+  },
+
+  async clearPushToken(): Promise<void> {
+    await SecureStore.deleteItemAsync(KEYS.PUSH_TOKEN);
   },
 
   async getThemeMode(): Promise<StoredThemeMode | null> {

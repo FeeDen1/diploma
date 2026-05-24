@@ -3,6 +3,7 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { notificationsApi, type DevicePlatform } from '@shared/api/notifications';
+import { storage } from '@shared/lib/storage';
 
 /**
  * Получает Expo Push Token и регистрирует его на бэке.
@@ -50,6 +51,9 @@ export async function registerDeviceToken(): Promise<string | null> {
 
   try {
     await notificationsApi.registerDeviceToken({ token, platform });
+    // Сохраняем локально, чтобы logout мог отвязать токен от аккаунта,
+    // пока JWT ещё валиден.
+    await storage.setPushToken(token);
   } catch {
     // Не блокируем UI логина из-за того, что бэк не принял токен.
     return null;
@@ -62,6 +66,11 @@ export async function unregisterDeviceToken(token: string): Promise<void> {
   try {
     await notificationsApi.unregisterDeviceToken({ token });
   } catch {
-    // На logout уже неважно: токен в БД физически останется до DeviceNotRegistered.
+    // Если бэк не ответил — токен в БД останется до первого DeviceNotRegistered
+    // от Expo. Для logout это не блокер.
+  } finally {
+    // Локальную копию чистим в любом случае — устройство больше не считает
+    // себя «привязанным».
+    await storage.clearPushToken();
   }
 }
