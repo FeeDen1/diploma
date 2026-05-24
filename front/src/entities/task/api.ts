@@ -32,12 +32,17 @@ interface InfiniteTasksFilters {
 /**
  * Бесконечная подгрузка заданий для виртуализованного FlatList.
  * Бэк отдаёт страницу offset/limit + total — отсюда вычисляем nextOffset.
+ *
+ * Лента заданий должна быть «живой»: staleTime=0 + refetchOnWindowFocus
+ * заставляют её ревалидироваться при возврате в приложение и при каждом
+ * монтировании. Persisted-кэш при этом всё равно показывается мгновенно —
+ * сеть лишь догоняет актуальную картину в фоне.
  */
 export function useInfiniteTasks(
   filters: InfiniteTasksFilters = {},
 ): UseInfiniteQueryResult<InfiniteData<PaginatedTasksDto>, unknown> {
   return useInfiniteQuery({
-    queryKey: ['tasks', 'infinite', filters],
+    queryKey: [...queryKeys.tasks.infinite, filters],
     queryFn: ({ pageParam = 0 }) =>
       tasksApi.list({
         ...filters,
@@ -49,6 +54,8 @@ export function useInfiniteTasks(
       const nextOffset = lastPage.offset + lastPage.items.length;
       return nextOffset < lastPage.total ? nextOffset : undefined;
     },
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -93,7 +100,7 @@ export function useCreateTask(): UseMutationResult<Task, unknown, CreateTaskDto>
     mutationFn: (dto) => tasksApi.create(dto).then(toTaskDomain),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.tasks.all });
-      qc.invalidateQueries({ queryKey: ['tasks', 'infinite'] });
+      qc.invalidateQueries({ queryKey: queryKeys.tasks.infinite });
     },
   });
 }
@@ -108,7 +115,7 @@ export function useUpdateTask(): UseMutationResult<
     mutationFn: ({ id, dto }) => tasksApi.update(id, dto).then(toTaskDomain),
     onSuccess: (task) => {
       qc.invalidateQueries({ queryKey: queryKeys.tasks.all });
-      qc.invalidateQueries({ queryKey: ['tasks', 'infinite'] });
+      qc.invalidateQueries({ queryKey: queryKeys.tasks.infinite });
       qc.invalidateQueries({ queryKey: queryKeys.tasks.byId(task.id) });
     },
   });
@@ -120,7 +127,7 @@ export function useArchiveTask(): UseMutationResult<void, unknown, string> {
     mutationFn: (id) => tasksApi.archive(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.tasks.all });
-      qc.invalidateQueries({ queryKey: ['tasks', 'infinite'] });
+      qc.invalidateQueries({ queryKey: queryKeys.tasks.infinite });
       qc.invalidateQueries({ queryKey: ['tasks', 'count'] });
     },
   });
@@ -132,7 +139,7 @@ export function useUnarchiveTask(): UseMutationResult<Task, unknown, string> {
     mutationFn: (id) => tasksApi.restore(id).then(toTaskDomain),
     onSuccess: (task) => {
       qc.invalidateQueries({ queryKey: queryKeys.tasks.all });
-      qc.invalidateQueries({ queryKey: ['tasks', 'infinite'] });
+      qc.invalidateQueries({ queryKey: queryKeys.tasks.infinite });
       qc.invalidateQueries({ queryKey: ['tasks', 'count'] });
       qc.invalidateQueries({ queryKey: queryKeys.tasks.byId(task.id) });
     },

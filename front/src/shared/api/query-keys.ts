@@ -16,6 +16,7 @@ export const queryKeys = {
   },
   tasks: {
     all: ['tasks'] as const,
+    infinite: ['tasks', 'infinite'] as const,
     byId: (id: string) => ['tasks', id] as const,
   },
   submissions: {

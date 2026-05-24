@@ -64,7 +64,7 @@ export function AchievementsList(): React.ReactElement {
         )}
         contentContainerStyle={{ paddingHorizontal: 10, paddingBottom: 16 }}
         showsVerticalScrollIndicator={false}
-        refreshing={view.isLoading}
+        refreshing={view.isRefreshing}
         onRefresh={view.refetch}
         onEndReached={() => {
           if (view.hasNextPage && !view.isFetchingNextPage) {

@@ -10,7 +10,6 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { Button } from '@shared/ui/Button';
 import { CameraIcon, CloseIcon } from '@shared/ui/icons';
-import { UploadedImage } from '@shared/ui/UploadedImage';
 import { useToast } from '@shared/ui';
 import { TASK_CATEGORY_LABELS } from '@shared/api/tasks';
 import { extractErrorMessage } from '@shared/api';
@@ -154,7 +153,11 @@ export function SubmitAchievementSheet({
           </View>
 
           {achievement.coverUrl ? (
-            <UploadedImage uri={achievement.coverUrl} borderRadius={16} />
+            <Image
+              source={{ uri: achievement.coverUrl }}
+              style={{ width: '100%', height: 200, borderRadius: 16 }}
+              resizeMode="cover"
+            />
           ) : null}
 
           <Text

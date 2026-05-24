@@ -5,8 +5,10 @@ import React, {
   useEffect,
   useState,
 } from 'react';
+import { AppState, Platform } from 'react-native';
 import { Stack, router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import { focusManager } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -150,6 +152,18 @@ export default function RootLayout(): React.ReactElement | null {
       router.replace('/(auth)/login');
     });
     return () => setUnauthorizedHandler(null);
+  }, []);
+
+  // React Query в React Native сам не знает о «фокусе окна» — пробрасываем
+  // AppState, чтобы refetchOnWindowFocus-запросы (лента заданий) обновлялись
+  // при каждом возврате приложения из фона.
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (status) => {
+      if (Platform.OS !== 'web') {
+        focusManager.setFocused(status === 'active');
+      }
+    });
+    return () => subscription.remove();
   }, []);
 
   // Главный фикс «мерцания»: пока target=null, ничего не рендерим — значит
