@@ -216,7 +216,7 @@ export function AddTaskForm(): React.ReactElement {
           <Image
             source={{ uri: coverUri }}
             style={{ width: '100%', height: 180 }}
-            resizeMode="contain"
+            resizeMode="cover"
           />
         ) : (
           <View className="h-32 items-center justify-center">

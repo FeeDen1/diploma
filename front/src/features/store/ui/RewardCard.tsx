@@ -26,7 +26,7 @@ export function RewardCard({ reward, affordable, onPress }: Props): React.ReactE
             <Image
               source={{ uri: reward.imageUrl }}
               style={{ width: '100%', height: '100%' }}
-              resizeMode="contain"
+              resizeMode="cover"
             />
           ) : (
             <TrophyIcon size={48} color="rgb(148 163 184)" />
