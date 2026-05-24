@@ -1,5 +1,12 @@
 import React from 'react';
-import { Text, TextInput, View, type TextInputProps } from 'react-native';
+import {
+  Text,
+  TextInput,
+  View,
+  type StyleProp,
+  type TextInputProps,
+  type TextStyle,
+} from 'react-native';
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -18,6 +25,7 @@ export function Input({
   error,
   containerClassName,
   className,
+  style,
   ...props
 }: InputProps) {
   return (
@@ -28,11 +36,18 @@ export function Input({
         </Text>
       )}
       <TextInput
+        // ВАЖНО: размер шрифта задаётся через style ({ fontSize: 16 }), а НЕ
+        // через утилиту text-base. text-base в NativeWind ставит ещё и
+        // lineHeight: 24 — а TextInput на iOS с заданным lineHeight смещает
+        // введённый текст вниз (placeholder при этом остаётся по центру).
+        // fontSize без lineHeight даёт корректное вертикальное центрирование
+        // на обеих платформах.
         className={`
-          border rounded-xl px-4 py-3 text-base text-text-primary bg-surface
+          border rounded-xl px-4 py-3 text-text-primary bg-surface
           ${error ? 'border-error' : 'border-border'}
           ${className ?? ''}
         `}
+        style={[{ fontSize: 16 }, style as StyleProp<TextStyle>]}
         placeholderTextColor="rgb(148 163 184)"
         {...props}
       />
