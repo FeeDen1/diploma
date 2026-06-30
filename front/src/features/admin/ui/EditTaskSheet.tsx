@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
+  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -8,12 +9,15 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { Button } from '@shared/ui/Button';
 import { Input } from '@shared/ui/Input';
 import { CloseIcon } from '@shared/ui/icons';
 import { DateTimeField } from '@shared/ui/DateTimeField';
-import { useToast } from '@shared/ui';
+import { useAlert, useToast } from '@shared/ui';
 import { extractErrorMessage } from '@shared/api';
+import { prepareImageForUpload } from '@shared/lib/prepare-image';
+import { filesApi } from '@shared/api/files';
 import {
   TASK_CATEGORIES,
   TASK_CATEGORY_LABELS,
@@ -35,6 +39,7 @@ interface Props {
 export function EditTaskSheet({ task, onClose }: Props): React.ReactElement | null {
   const update = useUpdateTask();
   const toast = useToast();
+  const alert = useAlert();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -42,6 +47,17 @@ export function EditTaskSheet({ task, onClose }: Props): React.ReactElement | nu
   const [points, setPoints] = useState('');
   const [expiresAt, setExpiresAt] = useState<Date | null>(null);
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  // Управление обложкой:
+  //  - coverUri/coverMime/coverName заполнены → выбран новый файл, нужно
+  //    загрузить и проставить taskFileId;
+  //  - coverRemoved=true → пользователь явно снёс обложку, шлём taskFileId=null;
+  //  - всё пусто и coverRemoved=false → обложку не трогаем, поле не отправляем.
+  const [coverUri, setCoverUri] = useState<string | null>(null);
+  const [coverMime, setCoverMime] = useState<string | null>(null);
+  const [coverName, setCoverName] = useState<string | null>(null);
+  const [coverRemoved, setCoverRemoved] = useState(false);
 
   useEffect(() => {
     if (!task) return;
@@ -51,9 +67,64 @@ export function EditTaskSheet({ task, onClose }: Props): React.ReactElement | nu
     setPoints(String(task.points));
     setExpiresAt(task.expiresAt);
     setError('');
+    setCoverUri(null);
+    setCoverMime(null);
+    setCoverName(null);
+    setCoverRemoved(false);
   }, [task]);
 
   if (!task) return null;
+
+  const pickCover = async (): Promise<void> => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      await alert({
+        title: 'Доступ к галерее',
+        message: 'Разрешите доступ к фото в настройках.',
+        tone: 'warning',
+      });
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 1,
+    });
+    if (result.canceled || !result.assets[0]) return;
+    try {
+      const prepared = await prepareImageForUpload(result.assets[0]);
+      setCoverUri(prepared.uri);
+      setCoverMime(prepared.mimeType);
+      setCoverName(prepared.fileName);
+      setCoverRemoved(false);
+    } catch {
+      await alert({
+        title: 'Не удалось обработать фото',
+        message: 'Попробуйте другое изображение.',
+        tone: 'danger',
+      });
+    }
+  };
+
+  const clearPickedCover = (): void => {
+    setCoverUri(null);
+    setCoverMime(null);
+    setCoverName(null);
+  };
+
+  const removeExistingCover = (): void => {
+    clearPickedCover();
+    setCoverRemoved(true);
+  };
+
+  const undoRemoveCover = (): void => {
+    setCoverRemoved(false);
+  };
+
+  // Что показать пользователю в превью обложки:
+  //  - новый выбранный файл, если есть;
+  //  - текущая обложка задания, если она была и не удалена;
+  //  - иначе плейсхолдер.
+  const previewUri = coverUri ?? (coverRemoved ? null : task.coverUrl);
 
   const handleSave = async (): Promise<void> => {
     if (!title.trim()) {
@@ -74,7 +145,25 @@ export function EditTaskSheet({ task, onClose }: Props): React.ReactElement | nu
       return;
     }
 
+    setSubmitting(true);
     try {
+      // taskFileId:
+      //  undefined → не трогаем обложку;
+      //  string    → выбран новый файл (после загрузки получим id);
+      //  null      → пользователь явно убрал обложку.
+      let taskFileId: string | null | undefined;
+      if (coverUri && coverMime && coverName) {
+        const uploaded = await filesApi.upload({
+          uri: coverUri,
+          name: coverName,
+          mimeType: coverMime,
+          type: 'task',
+        });
+        taskFileId = uploaded.id;
+      } else if (coverRemoved) {
+        taskFileId = null;
+      }
+
       await update.mutateAsync({
         id: task.id,
         dto: {
@@ -83,12 +172,15 @@ export function EditTaskSheet({ task, onClose }: Props): React.ReactElement | nu
           category,
           points: pts,
           expiresAt: expiresAt ? expiresAt.toISOString() : null,
+          ...(taskFileId !== undefined ? { taskFileId } : {}),
         },
       });
       toast.show('Задание обновлено', 'success');
       onClose();
     } catch (err) {
       setError(extractErrorMessage(err, 'Не удалось обновить'));
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -175,13 +267,73 @@ export function EditTaskSheet({ task, onClose }: Props): React.ReactElement | nu
                 placeholder="Без срока (бессрочное)"
               />
 
+              <Text className="text-sm font-medium text-text-primary mb-2">
+                Обложка задания{' '}
+                <Text className="text-text-muted font-normal">
+                  (необязательно)
+                </Text>
+              </Text>
+              <TouchableOpacity
+                onPress={() => void pickCover()}
+                activeOpacity={0.7}
+                className="rounded-xl border border-border bg-surface mb-3 overflow-hidden"
+              >
+                {previewUri ? (
+                  <Image
+                    source={{ uri: previewUri }}
+                    style={{ width: '100%', height: 180 }}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View className="h-32 items-center justify-center">
+                    <Text className="text-base text-text-secondary">
+                      {coverRemoved
+                        ? 'Обложка будет удалена'
+                        : 'Нажми, чтобы добавить обложку'}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              <View className="flex-row mb-6" style={{ gap: 16 }}>
+                {coverUri ? (
+                  <TouchableOpacity
+                    onPress={clearPickedCover}
+                    activeOpacity={0.7}
+                  >
+                    <Text className="text-sm text-text-secondary font-medium">
+                      Отменить замену
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
+                {!coverUri && !coverRemoved && task.coverUrl ? (
+                  <TouchableOpacity
+                    onPress={removeExistingCover}
+                    activeOpacity={0.7}
+                  >
+                    <Text className="text-sm text-error font-medium">
+                      Удалить обложку
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
+                {coverRemoved && !coverUri ? (
+                  <TouchableOpacity
+                    onPress={undoRemoveCover}
+                    activeOpacity={0.7}
+                  >
+                    <Text className="text-sm text-text-secondary font-medium">
+                      Отменить удаление
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
 
               <Button
                 title="Сохранить"
                 onPress={() => {
                   void handleSave();
                 }}
-                loading={update.isPending}
+                loading={submitting || update.isPending}
                 fullWidth
               />
             </ScrollView>

@@ -80,10 +80,6 @@ export function AddTaskForm(): React.ReactElement {
       setFormError('Введите корректное количество баллов');
       return;
     }
-    if (!coverUri || !coverMime || !coverName) {
-      setFormError('Прикрепите обложку задания');
-      return;
-    }
     if (expiresAt && expiresAt.getTime() <= Date.now()) {
       setFormError('Дедлайн должен быть в будущем');
       return;
@@ -92,19 +88,23 @@ export function AddTaskForm(): React.ReactElement {
 
     setSubmitting(true);
     try {
-      const cover = await filesApi.upload({
-        uri: coverUri,
-        name: coverName,
-        mimeType: coverMime,
-        type: 'task',
-      });
+      let taskFileId: string | undefined;
+      if (coverUri && coverMime && coverName) {
+        const cover = await filesApi.upload({
+          uri: coverUri,
+          name: coverName,
+          mimeType: coverMime,
+          type: 'task',
+        });
+        taskFileId = cover.id;
+      }
 
       await create.mutateAsync({
         title: title.trim(),
         description: description.trim(),
         category,
         points: pts,
-        taskFileId: cover.id,
+        taskFileId,
         expiresAt: expiresAt ? expiresAt.toISOString() : undefined,
       });
 
@@ -205,12 +205,13 @@ export function AddTaskForm(): React.ReactElement {
 
 
       <Text className="text-sm font-medium text-text-primary mb-2">
-        Обложка задания
+        Обложка задания{' '}
+        <Text className="text-text-muted font-normal">(необязательно)</Text>
       </Text>
       <TouchableOpacity
         onPress={() => void pickCover()}
         activeOpacity={0.7}
-        className="rounded-xl border border-border bg-surface mb-6 overflow-hidden"
+        className="rounded-xl border border-border bg-surface mb-3 overflow-hidden"
       >
         {coverUri ? (
           <Image
@@ -221,11 +222,26 @@ export function AddTaskForm(): React.ReactElement {
         ) : (
           <View className="h-32 items-center justify-center">
             <Text className="text-base text-text-secondary">
-              Нажми, чтобы выбрать картинку
+              Нажми, чтобы выбрать (можно без обложки)
             </Text>
           </View>
         )}
       </TouchableOpacity>
+      {coverUri ? (
+        <TouchableOpacity
+          onPress={() => {
+            setCoverUri(null);
+            setCoverMime(null);
+            setCoverName(null);
+          }}
+          activeOpacity={0.7}
+          className="mb-6 self-start"
+        >
+          <Text className="text-sm text-error font-medium">Убрать обложку</Text>
+        </TouchableOpacity>
+      ) : (
+        <View className="mb-6" />
+      )}
 
       <Button
         title="Создать"
