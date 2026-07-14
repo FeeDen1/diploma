@@ -1,9 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
   Image,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -12,7 +9,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { Button } from '@shared/ui/Button';
 import { Input } from '@shared/ui/Input';
-import { CloseIcon } from '@shared/ui/icons';
+import { BottomSheet } from '@shared/ui/BottomSheet';
 import { useAlert, useToast } from '@shared/ui';
 import { extractErrorMessage } from '@shared/api';
 import { prepareImageForUpload } from '@shared/lib/prepare-image';
@@ -153,30 +150,12 @@ export function EditRewardSheet({
   };
 
   return (
-    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        className="flex-1"
+    <BottomSheet title="Редактирование лота" onClose={onClose} maxHeight="90%">
+      <ScrollView
+        contentContainerStyle={{ paddingHorizontal: 20 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <View className="flex-1 justify-end bg-black/50">
-          <View
-            className="bg-surface rounded-t-3xl pt-4 pb-8"
-            style={{ maxHeight: '90%' }}
-          >
-            <View className="flex-row items-center justify-between px-5 mb-4">
-              <Text className="text-lg font-bold text-text-primary flex-1 mr-3">
-                Редактирование лота
-              </Text>
-              <TouchableOpacity onPress={onClose} activeOpacity={0.7}>
-                <CloseIcon size={24} color="rgb(100 116 139)" />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView
-              contentContainerStyle={{ paddingHorizontal: 20 }}
-              keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}
-            >
               {error ? (
                 <View className="bg-error/10 rounded-xl p-3 mb-3">
                   <Text className="text-sm text-error">{error}</Text>
@@ -252,18 +231,15 @@ export function EditRewardSheet({
                 ) : null}
               </View>
 
-              <Button
-                title="Сохранить"
-                onPress={() => {
-                  void handleSave();
-                }}
-                loading={submitting || update.isPending}
-                fullWidth
-              />
-            </ScrollView>
-          </View>
-        </View>
-      </KeyboardAvoidingView>
-    </Modal>
+        <Button
+          title="Сохранить"
+          onPress={() => {
+            void handleSave();
+          }}
+          loading={submitting || update.isPending}
+          fullWidth
+        />
+      </ScrollView>
+    </BottomSheet>
   );
 }
