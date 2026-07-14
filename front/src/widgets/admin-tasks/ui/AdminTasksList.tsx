@@ -5,6 +5,7 @@ import { EmptyState } from '@shared/ui/EmptyState';
 import { ArchiveIcon } from '@shared/ui/icons';
 import { useConfirm, useToast } from '@shared/ui';
 import { extractErrorMessage } from '@shared/api';
+import { useManualRefresh } from '@shared/lib/useManualRefresh';
 import {
   flattenInfiniteTasks,
   useArchiveTask,
@@ -37,6 +38,7 @@ export function AdminTasksList(): React.ReactElement {
   const deletePermanent = useDeleteTaskPermanent();
   const toast = useToast();
   const confirm = useConfirm();
+  const { refreshing, onRefresh } = useManualRefresh(tasksQuery.refetch);
 
   const data = useMemo<Task[]>(() => {
     const all = flattenInfiniteTasks(tasksQuery.data);
@@ -126,8 +128,8 @@ export function AdminTasksList(): React.ReactElement {
             void tasksQuery.fetchNextPage();
           }
         }}
-        refreshing={tasksQuery.isRefetching}
-        onRefresh={() => void tasksQuery.refetch()}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
         ListEmptyComponent={
           tasksQuery.isLoading ? (
             <View className="py-16 items-center">

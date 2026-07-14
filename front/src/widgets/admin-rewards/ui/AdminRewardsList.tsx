@@ -18,6 +18,7 @@ import {
 } from '@shared/ui/icons';
 import { useConfirm, useToast } from '@shared/ui';
 import { extractErrorMessage } from '@shared/api';
+import { useManualRefresh } from '@shared/lib/useManualRefresh';
 import {
   useArchiveReward,
   useRewards,
@@ -41,9 +42,10 @@ export function AdminRewardsList(): React.ReactElement {
   const [scope, setScope] = useState<RewardsScope>('active');
   const [editing, setEditing] = useState<Reward | null>(null);
 
-  const { data, isLoading, refetch, isRefetching } = useRewards({
+  const { data, isLoading, refetch } = useRewards({
     includeArchived: scope === 'archive' ? true : undefined,
   });
+  const { refreshing, onRefresh } = useManualRefresh(refetch);
   const archive = useArchiveReward();
   const unarchive = useUnarchiveReward();
   const toast = useToast();
@@ -161,8 +163,8 @@ export function AdminRewardsList(): React.ReactElement {
         renderItem={renderItem}
         ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
         contentContainerStyle={{ padding: 16, paddingBottom: 24 }}
-        refreshing={isRefetching}
-        onRefresh={() => void refetch()}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
         ListEmptyComponent={
           isLoading ? (
             <View className="py-16 items-center">

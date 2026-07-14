@@ -7,15 +7,18 @@
 #
 # Что делает:
 #   1) Ставит sharp если его нет в front/node_modules
-#   2) Иконки приложения — из растрового логотипа front/assets/icon-source.png:
+#   2) Всё из растрового логотипа front/assets/icon-source.png:
 #        icon.png          (1024×1024, белый фон, без альфы — для iOS/App Store)
 #        adaptive-icon.png (1024×1024, логотип обрезан от полей и вписан в ~62%
 #                           центра — безопасная зона Android-маски, фон белый)
+#        splash-icon.png   (1024×1024, логотип в ~72% на прозрачном холсте;
+#                           фон сплэша — splash.backgroundColor в app.json)
+#        notification-icon.png (96×96, белый силуэт монограммы «PM» на прозрачном —
+#                           Android рисует по альфе, цвет из expo-notifications.color)
 #        favicon.png       (48×48)
-#   3) Сплэш — из front/assets/splash-icon.svg → splash-icon.png (800×800)
 #
-# Хочешь поменять иконку приложения — замени front/assets/icon-source.png и
-# прогони скрипт. Сплэш по-прежнему из splash-icon.svg.
+# Хочешь поменять иконку/сплэш — замени front/assets/icon-source.png и
+# прогони скрипт.
 
 set -euo pipefail
 
@@ -39,15 +42,6 @@ node <<'JS'
 const sharp = require('sharp');
 const fs = require('fs');
 const path = require('path');
-
-async function svgToPng(svgPath, outPath, size) {
-    const svg = fs.readFileSync(svgPath);
-    await sharp(svg, { density: 600 })
-        .resize(size, size, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
-        .png({ compressionLevel: 9, adaptiveFiltering: true })
-        .toFile(outPath);
-    logSize(outPath, size);
-}
 
 function logSize(outPath, size) {
     const stats = fs.statSync(outPath);
@@ -84,10 +78,48 @@ async function buildAdaptiveIcon(size) {
     logSize('assets/adaptive-icon.png', size);
 }
 
+// Splash — логотип обрезан от полей и вписан в ~72% прозрачного холста;
+// фон задаётся в app.json (splash.backgroundColor = белый).
+async function buildSplash(size) {
+    const inner = Math.round(size * 0.72);
+    const trimmed = await sharp(ICON_SOURCE).flatten({ background: WHITE }).trim().toBuffer();
+    const logo = await sharp(trimmed).resize(inner, inner, { fit: 'inside' }).png().toBuffer();
+    await sharp({ create: { width: size, height: size, channels: 4, background: { r: 255, g: 255, b: 255, alpha: 0 } } })
+        .composite([{ input: logo, gravity: 'center' }])
+        .png({ compressionLevel: 9 })
+        .toFile('assets/splash-icon.png');
+    logSize('assets/splash-icon.png', size);
+}
+
+// Android notification icon — система использует только альфа-канал и рисует
+// белый силуэт (цвет задаётся отдельно в app.json → expo-notifications.color).
+// Берём монограмму «PM» (левый-верхний фрагмент логотипа) — в статус-баре
+// весь wordmark нечитаем. Тёмный ink → непрозрачный белый, фон → прозрачный.
+async function buildNotificationIcon(size) {
+    const inner = Math.round(size * 0.82);
+    const trimmed = await sharp(ICON_SOURCE).flatten({ background: WHITE }).trim().toBuffer();
+    const tm = await sharp(trimmed).metadata();
+    const pm = await sharp(trimmed)
+        .extract({ left: 0, top: 0, width: Math.round(tm.width * 0.52), height: Math.round(tm.height * 0.6) })
+        .toBuffer();
+    const grayLogo = await sharp(pm).grayscale().trim().resize(inner, inner, { fit: 'inside' }).toBuffer();
+    const graySquare = await sharp({ create: { width: size, height: size, channels: 3, background: WHITE } })
+        .composite([{ input: grayLogo, gravity: 'center' }])
+        .png()
+        .toBuffer();
+    const mask = await sharp(graySquare).negate().threshold(120).extractChannel(0).png().toBuffer();
+    await sharp({ create: { width: size, height: size, channels: 3, background: WHITE } })
+        .joinChannel(mask)
+        .png({ compressionLevel: 9 })
+        .toFile('assets/notification-icon.png');
+    logSize('assets/notification-icon.png', size);
+}
+
 (async () => {
     await buildAppIcon(1024);
     await buildAdaptiveIcon(1024);
-    await svgToPng('assets/splash-icon.svg', 'assets/splash-icon.png', 800);
+    await buildSplash(1024);
+    await buildNotificationIcon(96);
     await sharp(ICON_SOURCE)
         .resize(48, 48, { fit: 'cover' })
         .flatten({ background: WHITE })

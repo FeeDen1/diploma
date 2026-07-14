@@ -1,7 +1,7 @@
 import React from 'react';
-import { Image, Text, TouchableOpacity, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { Badge } from '@shared/ui/Badge';
-import { TrophyIcon } from '@shared/ui/icons';
+import { GridCard } from '@shared/ui/GridCard';
 import { TASK_CATEGORY_LABELS } from '@shared/api/tasks';
 import {
   formatDeadline,
@@ -56,22 +56,13 @@ export function AchievementCard({
     (achievement.status === 'available' || achievement.status === 'rejected');
 
   return (
-    <TouchableOpacity
+    <GridCard
+      title={achievement.title}
+      imageUrl={achievement.coverUrl}
       activeOpacity={clickable ? 0.85 : 1}
       onPress={clickable ? onPress : undefined}
-      style={{ width: '50%', padding: 6 }}
-    >
-      <View className="rounded-2xl bg-surface border border-border overflow-hidden">
-        <View className="aspect-square w-full bg-surface-secondary items-center justify-center">
-          {achievement.coverUrl ? (
-            <Image
-              source={{ uri: achievement.coverUrl }}
-              style={{ width: '100%', height: '100%' }}
-              resizeMode="cover"
-            />
-          ) : (
-            <TrophyIcon size={48} color="rgb(148 163 184)" />
-          )}
+      overlay={
+        <>
           <View className="absolute top-2 right-2">
             <Badge text={status.text} variant={status.variant} />
           </View>
@@ -88,36 +79,21 @@ export function AchievementCard({
               />
             </View>
           ) : null}
+        </>
+      }
+      footer={
+        <View className="flex-row items-center justify-between mt-2">
+          <Text
+            className="text-xs text-text-muted flex-1 mr-2"
+            numberOfLines={1}
+          >
+            {TASK_CATEGORY_LABELS[achievement.category]}
+          </Text>
+          <Text className="text-sm font-bold text-primary">
+            +{achievement.points}
+          </Text>
         </View>
-        <View className="p-3">
-          {/*
-            Блок фиксированной высоты в 2 строки — чтобы все карточки были
-            одной высоты. justify-center центрирует заголовок по вертикали:
-            у коротких (однострочных) названий пустота делится поровну сверху
-            и снизу.
-          */}
-          <View style={{ height: 36, justifyContent: 'center' }}>
-            <Text
-              className="text-sm font-semibold text-text-primary"
-              numberOfLines={2}
-              style={{ lineHeight: 18 }}
-            >
-              {achievement.title}
-            </Text>
-          </View>
-          <View className="flex-row items-center justify-between mt-2">
-            <Text
-              className="text-xs text-text-muted flex-1 mr-2"
-              numberOfLines={1}
-            >
-              {TASK_CATEGORY_LABELS[achievement.category]}
-            </Text>
-            <Text className="text-sm font-bold text-primary">
-              +{achievement.points}
-            </Text>
-          </View>
-        </View>
-      </View>
-    </TouchableOpacity>
+      }
+    />
   );
 }

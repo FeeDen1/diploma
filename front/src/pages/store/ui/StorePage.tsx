@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -11,6 +11,7 @@ import { useMe } from '@entities/user';
 import { useRewards, type Reward } from '@entities/reward';
 import { RewardCard } from '@features/store/ui/RewardCard';
 import { useRewardPurchase } from '@features/store/lib/useRewardPurchase';
+import { useManualRefresh } from '@shared/lib/useManualRefresh';
 
 /**
  * Страница магазина. Сетка лотов 2 колонки, тап → подтверждение покупки
@@ -18,14 +19,26 @@ import { useRewardPurchase } from '@features/store/lib/useRewardPurchase';
  * вся логика покупки и списания в feature.
  */
 export function StorePage(): React.ReactElement {
-  const { data: rewards, isLoading, refetch, isRefetching } = useRewards();
+  const { data: rewards, isLoading, refetch } = useRewards();
   const { data: me } = useMe();
   const { buy } = useRewardPurchase();
+  const { refreshing, onRefresh } = useManualRefresh(refetch);
+
+  const available = me?.availablePoints ?? 0;
+
+  // Сначала лоты, которые по карману, потом остальные. Партиционирование
+  // (а не sort) сохраняет исходный порядок бэка внутри каждой группы.
+  const sortedRewards = useMemo(() => {
+    const list = rewards ?? [];
+    const affordable = list.filter((reward) => available >= reward.price);
+    const rest = list.filter((reward) => available < reward.price);
+    return [...affordable, ...rest];
+  }, [rewards, available]);
 
   const renderItem = ({ item }: { item: Reward }): React.ReactElement => (
     <RewardCard
       reward={item}
-      affordable={(me?.availablePoints ?? 0) >= item.price}
+      affordable={available >= item.price}
       onPress={() => void buy(item)}
     />
   );
@@ -39,13 +52,13 @@ export function StorePage(): React.ReactElement {
       </View>
 
       <FlatList
-        data={rewards ?? []}
+        data={sortedRewards}
         keyExtractor={(reward) => reward.id}
         renderItem={renderItem}
         numColumns={2}
         contentContainerStyle={{ paddingHorizontal: 6, paddingBottom: 24 }}
-        refreshing={isRefetching}
-        onRefresh={() => void refetch()}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
         ListEmptyComponent={
           isLoading ? (
             <View className="py-16 items-center">
