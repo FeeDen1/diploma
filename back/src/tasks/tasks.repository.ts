@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma';
-import { Prisma, TaskCategory } from '../../generated/prisma/client';
+import {
+  Prisma,
+  SubmissionStatus,
+  TaskCategory,
+} from '../../generated/prisma/client';
 import type { TasksSort } from './dto/list-tasks-query.dto';
 import type { AchievementStatus } from './dto/achievement-status';
 
@@ -212,6 +216,71 @@ export class TasksRepository {
       where: { id },
       data: { archivedAt: null },
       include: WITH_FILE,
+    });
+  }
+
+  /**
+   * Физическое удаление задания с откатом начисленных баллов.
+   *
+   * За каждый approved-сабмит студент когда-то получил +points в ratingTotal.
+   * Перед удалением задания эти баллы нужно снять, иначе рейтинг «зависнет»
+   * на несуществующем задании. Пара (task_id, student_id) уникальна, поэтому
+   * на каждого затронутого студента приходится ровно один approved-сабмит —
+   * значит достаточно decrement на points по списку студентов.
+   *
+   * Сам task.delete каскадно удаляет task_submissions (onDelete: Cascade), но
+   * File-строки (обложка задания + фото-пруфы сдач) при этом остаются —
+   * поэтому удаляем их явно и возвращаем objectKey'и, чтобы сервис снёс сами
+   * объекты из S3 уже после коммита транзакции.
+   *
+   * Всё в одной транзакции: либо снялись баллы, удалилось задание и его файлы,
+   * либо ничего.
+   *
+   * @returns objectKey'и файлов, которые нужно удалить из S3.
+   */
+  async deleteWithRatingRollback(id: string): Promise<string[]> {
+    return this.prisma.$transaction(async (tx) => {
+      const task = await tx.task.findUniqueOrThrow({
+        where: { id },
+        select: { points: true, taskFileId: true },
+      });
+
+      const submissions = await tx.taskSubmission.findMany({
+        where: { taskId: id },
+        select: { studentId: true, submissionFileId: true, status: true },
+      });
+
+      const approvedStudentIds = submissions
+        .filter((s) => s.status === SubmissionStatus.approved)
+        .map((s) => s.studentId);
+
+      if (approvedStudentIds.length > 0 && task.points > 0) {
+        await tx.user.updateMany({
+          where: { id: { in: approvedStudentIds } },
+          data: { ratingTotal: { decrement: task.points } },
+        });
+      }
+
+      // Файлы к удалению: обложка задания + все файлы-доказательства сдач.
+      const fileIds = [
+        ...(task.taskFileId ? [task.taskFileId] : []),
+        ...submissions.map((s) => s.submissionFileId),
+      ];
+
+      const files = fileIds.length
+        ? await tx.file.findMany({
+            where: { id: { in: fileIds } },
+            select: { objectKey: true },
+          })
+        : [];
+
+      // Сначала задание (каскад снесёт сами сдачи), затем осиротевшие File-строки.
+      await tx.task.delete({ where: { id } });
+      if (fileIds.length > 0) {
+        await tx.file.deleteMany({ where: { id: { in: fileIds } } });
+      }
+
+      return files.map((f) => f.objectKey);
     });
   }
 

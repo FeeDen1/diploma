@@ -9,15 +9,24 @@ import { queryKeys } from '@shared/api';
 import {
   rewardsApi,
   type CreateRewardDto,
+  type ListRewardsQuery,
   type ReadRedemptionDto,
+  type UpdateRewardDto,
 } from '@shared/api/rewards';
 import { toRewardDomain, toRewardOrderDomain } from './mappers';
 import type { Reward, RewardOrder } from './types';
 
-export function useRewards(): UseQueryResult<Reward[]> {
+/**
+ * Список лотов. Без параметров — витрина (только активные). С
+ * includeArchived=true (админский список) бэк добавляет архивные — фильтрацию
+ * по scope делает вызывающий виджет.
+ */
+export function useRewards(
+  query: ListRewardsQuery = {},
+): UseQueryResult<Reward[]> {
   return useQuery({
-    queryKey: queryKeys.rewards.all,
-    queryFn: () => rewardsApi.list(),
+    queryKey: [...queryKeys.rewards.all, query],
+    queryFn: () => rewardsApi.list(query),
     select: (dtos) => dtos.map(toRewardDomain),
   });
 }
@@ -44,10 +53,38 @@ export function useCreateReward(): UseMutationResult<
   });
 }
 
+export function useUpdateReward(): UseMutationResult<
+  Reward,
+  unknown,
+  { id: string; dto: UpdateRewardDto }
+> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, dto }) => rewardsApi.update(id, dto).then(toRewardDomain),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.rewards.all });
+    },
+  });
+}
+
 export function useArchiveReward(): UseMutationResult<void, unknown, string> {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id) => rewardsApi.archive(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.rewards.all });
+    },
+  });
+}
+
+export function useUnarchiveReward(): UseMutationResult<
+  Reward,
+  unknown,
+  string
+> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => rewardsApi.restore(id).then(toRewardDomain),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.rewards.all });
     },

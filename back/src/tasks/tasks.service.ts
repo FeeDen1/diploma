@@ -1,15 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { TasksRepository, TaskForUser, TaskWithFile } from './tasks.repository';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { ListTasksQueryDto, TasksSort } from './dto/list-tasks-query.dto';
 import { EntityNotFoundException } from '../common/exceptions/not-found.exception';
+import { DomainValidationException } from '../common/exceptions/validation.exception';
 import { S3Service } from '../s3/s3.service';
 import { UserRole } from '../../generated/prisma/client';
 import { TokenPayload } from '../auth/interfaces/token-payload.interface';
 
 @Injectable()
 export class TasksService {
+  private readonly logger = new Logger(TasksService.name);
+
   constructor(
     private readonly tasksRepository: TasksRepository,
     private readonly s3Service: S3Service,
@@ -119,6 +122,33 @@ export class TasksService {
   async archiveTask(id: string): Promise<void> {
     await this.getTaskByIdRaw(id);
     await this.tasksRepository.archive(id);
+  }
+
+  /**
+   * Физическое удаление задания. Разрешено только из архива — активное
+   * задание сначала архивируется. Начисленные за approved-сабмиты баллы
+   * снимаются с рейтинга студентов (см. deleteWithRatingRollback).
+   */
+  async deleteTask(id: string): Promise<void> {
+    const task = await this.getTaskByIdRaw(id);
+    if (!task.archivedAt) {
+      throw new DomainValidationException(
+        'Удалять можно только архивные задания. Сначала отправьте задание в архив.',
+      );
+    }
+    const objectKeys = await this.tasksRepository.deleteWithRatingRollback(id);
+
+    // S3 внешний и нетранзакционный: чистим уже после коммита БД. Ошибку не
+    // пробрасываем — БД консистентна, максимум останется осиротевший объект.
+    await Promise.all(
+      objectKeys.map((key) =>
+        this.s3Service.delete(key).catch((err: unknown) => {
+          this.logger.warn(
+            `Не удалось удалить объект S3 "${key}" при удалении задания ${id}: ${String(err)}`,
+          );
+        }),
+      ),
+    );
   }
 
   /**

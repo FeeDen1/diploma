@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { FileType } from '../../generated/prisma/client';
+import { FileType, UserRole } from '../../generated/prisma/client';
 import { EntityNotFoundException } from '../common/exceptions/not-found.exception';
 import { DomainValidationException } from '../common/exceptions/validation.exception';
 import { S3Service } from '../s3/s3.service';
 import { FilesService } from '../files/files.service';
+import type { TokenPayload } from '../auth/interfaces/token-payload.interface';
 import {
   InsufficientFundsError,
   RewardsRepository,
@@ -11,6 +12,7 @@ import {
   type RewardRedemptionWithItem,
 } from './rewards.repository';
 import { CreateRewardDto } from './dto/create-reward.dto';
+import { UpdateRewardDto } from './dto/update-reward.dto';
 
 @Injectable()
 export class RewardsService {
@@ -20,8 +22,16 @@ export class RewardsService {
     private readonly s3Service: S3Service,
   ) {}
 
-  async listActive(): Promise<RewardItemWithImage[]> {
-    return this.rewardsRepository.findActive();
+  /**
+   * Список лотов. Архив (includeArchived) виден только админу — для
+   * student/adapter флаг всегда игнорируется, витрина отдаёт лишь активные.
+   */
+  async list(
+    user: TokenPayload,
+    includeArchived: boolean,
+  ): Promise<RewardItemWithImage[]> {
+    const withArchived = user.role === UserRole.admin && includeArchived;
+    return this.rewardsRepository.findMany(withArchived);
   }
 
   async createReward(
@@ -41,6 +51,46 @@ export class RewardsService {
       price: dto.price,
       imageFileId: dto.imageFileId ?? null,
     });
+  }
+
+  async updateReward(
+    adminId: string,
+    id: string,
+    dto: UpdateRewardDto,
+  ): Promise<RewardItemWithImage> {
+    const reward = await this.rewardsRepository.findById(id);
+    if (!reward) {
+      throw new EntityNotFoundException('RewardItem', id);
+    }
+    // Проверяем владение/тип только когда выбрана новая обложка. null здесь
+    // означает «убрать обложку» и валидации файла не требует.
+    if (dto.imageFileId) {
+      await this.filesService.assertOwnedAndType(
+        dto.imageFileId,
+        adminId,
+        FileType.reward,
+      );
+    }
+    return this.rewardsRepository.update(id, {
+      ...(dto.title !== undefined ? { title: dto.title.trim() } : {}),
+      ...(dto.price !== undefined ? { price: dto.price } : {}),
+      // undefined → не трогаем обложку; string → новая; null → снять.
+      ...(dto.imageFileId !== undefined
+        ? { imageFileId: dto.imageFileId }
+        : {}),
+    });
+  }
+
+  async unarchiveReward(id: string): Promise<RewardItemWithImage> {
+    const reward = await this.rewardsRepository.findById(id);
+    if (!reward) {
+      throw new EntityNotFoundException('RewardItem', id);
+    }
+    if (!reward.archivedAt) {
+      // идемпотентность — восстановление активного лота не ошибка
+      return reward;
+    }
+    return this.rewardsRepository.unarchive(id);
   }
 
   async archiveReward(id: string): Promise<void> {

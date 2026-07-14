@@ -29,3 +29,14 @@ export interface CreateRewardDto {
   price: number;
   imageFileId?: string;
 }
+
+export interface UpdateRewardDto {
+  title?: string;
+  price?: number;
+  // undefined — не трогаем обложку; string — новая; null — убрать обложку.
+  imageFileId?: string | null;
+}
+
+export interface ListRewardsQuery {
+  includeArchived?: boolean;
+}

@@ -90,12 +90,21 @@ export function AchievementCard({
           ) : null}
         </View>
         <View className="p-3">
-          <Text
-            className="text-sm font-semibold text-text-primary"
-            numberOfLines={2}
-          >
-            {achievement.title}
-          </Text>
+          {/*
+            Блок фиксированной высоты в 2 строки — чтобы все карточки были
+            одной высоты. justify-center центрирует заголовок по вертикали:
+            у коротких (однострочных) названий пустота делится поровну сверху
+            и снизу.
+          */}
+          <View style={{ height: 36, justifyContent: 'center' }}>
+            <Text
+              className="text-sm font-semibold text-text-primary"
+              numberOfLines={2}
+              style={{ lineHeight: 18 }}
+            >
+              {achievement.title}
+            </Text>
+          </View>
           <View className="flex-row items-center justify-between mt-2">
             <Text
               className="text-xs text-text-muted flex-1 mr-2"

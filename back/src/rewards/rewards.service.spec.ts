@@ -29,9 +29,11 @@ describe('RewardsService', () => {
     rewardsRepository = {
       findById: jest.fn(),
       redeem: jest.fn(),
-      findActive: jest.fn(),
+      findMany: jest.fn(),
       create: jest.fn(),
+      update: jest.fn(),
       archive: jest.fn(),
+      unarchive: jest.fn(),
       findMyRedemptions: jest.fn(),
     } as unknown as jest.Mocked<RewardsRepository>;
     filesService = {
@@ -77,7 +79,7 @@ describe('RewardsService', () => {
       rewardsRepository.findById.mockResolvedValue({
         ...baseReward,
         archivedAt: new Date(),
-      } as never);
+      });
 
       await expect(service.redeem('user-1', 'reward-1')).rejects.toBeInstanceOf(
         EntityNotFoundException,
@@ -110,7 +112,7 @@ describe('RewardsService', () => {
       rewardsRepository.findById.mockResolvedValue({
         ...baseReward,
         archivedAt: new Date(),
-      } as never);
+      });
 
       await service.archiveReward('reward-1');
 

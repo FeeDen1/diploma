@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -117,5 +119,19 @@ export class TasksController {
   async restore(@Param('id', ParseUUIDPipe) id: string): Promise<ReadTaskDto> {
     const task = await this.tasksService.unarchiveTask(id);
     return ReadTaskDto.fromEntity(task, this.tasksService.getTaskFileUrl(task));
+  }
+
+  @ApiOperation({
+    summary:
+      'Удалить архивное задание навсегда (admin). Начисленные за него баллы ' +
+      'снимаются с рейтинга студентов. Работает только для архивных заданий',
+  })
+  @ApiResponse({ status: 204 })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.admin)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Delete(':id/permanent')
+  async remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
+    await this.tasksService.deleteTask(id);
   }
 }

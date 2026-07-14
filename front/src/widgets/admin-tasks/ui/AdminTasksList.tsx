@@ -8,6 +8,7 @@ import { extractErrorMessage } from '@shared/api';
 import {
   flattenInfiniteTasks,
   useArchiveTask,
+  useDeleteTaskPermanent,
   useInfiniteTasks,
   useUnarchiveTask,
   type Task,
@@ -33,6 +34,7 @@ export function AdminTasksList(): React.ReactElement {
   });
   const archive = useArchiveTask();
   const unarchive = useUnarchiveTask();
+  const deletePermanent = useDeleteTaskPermanent();
   const toast = useToast();
   const confirm = useConfirm();
 
@@ -68,6 +70,23 @@ export function AdminTasksList(): React.ReactElement {
     });
   };
 
+  const handleDeletePermanent = async (task: Task): Promise<void> => {
+    const ok = await confirm({
+      title: `Удалить «${task.title}» навсегда?`,
+      message:
+        'Задание и все сдачи по нему удалятся безвозвратно. Начисленные за ' +
+        'него баллы будут сняты с рейтинга студентов. Это действие нельзя отменить.',
+      confirmText: 'Удалить навсегда',
+      destructive: true,
+    });
+    if (!ok) return;
+    deletePermanent.mutate(task.id, {
+      onSuccess: () => toast.show('Задание удалено', 'success'),
+      onError: (err) =>
+        toast.show(extractErrorMessage(err, 'Не удалось удалить'), 'error'),
+    });
+  };
+
   return (
     <View className="flex-1 bg-background">
       <View className="px-4 pt-3 pb-2 flex-row">
@@ -95,8 +114,10 @@ export function AdminTasksList(): React.ReactElement {
             onEdit={() => setEditing(item)}
             onArchive={() => void handleArchive(item)}
             onRestore={() => handleRestore(item)}
+            onDeletePermanent={() => void handleDeletePermanent(item)}
             archiving={archive.isPending}
             restoring={unarchive.isPending}
+            deleting={deletePermanent.isPending}
           />
         )}
         onEndReachedThreshold={0.4}

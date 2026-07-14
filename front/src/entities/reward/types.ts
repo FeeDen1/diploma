@@ -5,6 +5,8 @@ export interface Reward {
   title: string;
   price: number;
   imageUrl: string | null;
+  archivedAt: Date | null;
+  isArchived: boolean;
   createdAt: Date;
 }
 

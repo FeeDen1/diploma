@@ -61,4 +61,8 @@ export const tasksApi = {
     const { data } = await apiClient.patch<ReadTaskDto>(`/tasks/${id}/restore`);
     return data;
   },
+
+  async deletePermanent(id: string): Promise<void> {
+    await apiClient.delete(`/tasks/${id}/permanent`);
+  },
 };

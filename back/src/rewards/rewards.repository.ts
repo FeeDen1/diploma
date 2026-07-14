@@ -22,9 +22,13 @@ export type RewardRedemptionWithItem = Prisma.RewardRedemptionGetPayload<{
 export class RewardsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findActive(): Promise<RewardItemWithImage[]> {
+  /**
+   * Список лотов. includeArchived=false — только активные (витрина магазина),
+   * true — активные + архивные (админский список с фильтром по scope).
+   */
+  async findMany(includeArchived: boolean): Promise<RewardItemWithImage[]> {
     return this.prisma.rewardItem.findMany({
-      where: { archivedAt: null },
+      where: includeArchived ? {} : { archivedAt: null },
       orderBy: { createdAt: 'desc' },
       include: REWARD_INCLUDE,
     });
@@ -52,10 +56,30 @@ export class RewardsRepository {
     });
   }
 
+  async update(
+    id: string,
+    data: { title?: string; price?: number; imageFileId?: string | null },
+  ): Promise<RewardItemWithImage> {
+    return this.prisma.rewardItem.update({
+      where: { id },
+      data,
+      include: REWARD_INCLUDE,
+    });
+  }
+
   async archive(id: string): Promise<void> {
     await this.prisma.rewardItem.update({
       where: { id },
       data: { archivedAt: new Date() },
+    });
+  }
+
+  /** Возврат лота из архива обратно в витрину. */
+  async unarchive(id: string): Promise<RewardItemWithImage> {
+    return this.prisma.rewardItem.update({
+      where: { id },
+      data: { archivedAt: null },
+      include: REWARD_INCLUDE,
     });
   }
 

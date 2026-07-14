@@ -3,4 +3,5 @@
 export { AddTaskForm } from './ui/AddTaskForm';
 export { EditTaskSheet } from './ui/EditTaskSheet';
 export { AddRewardForm } from './ui/AddRewardForm';
+export { EditRewardSheet } from './ui/EditRewardSheet';
 export { AdapterAssignSheet } from './ui/AdapterAssignSheet';

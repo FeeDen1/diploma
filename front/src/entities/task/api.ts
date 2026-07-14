@@ -133,6 +133,29 @@ export function useArchiveTask(): UseMutationResult<void, unknown, string> {
   });
 }
 
+/**
+ * Окончательное удаление архивного задания. На бэке снимает начисленные за
+ * него баллы с рейтинга студентов, поэтому инвалидируем и баланс (auth.me),
+ * и лидерборд.
+ */
+export function useDeleteTaskPermanent(): UseMutationResult<
+  void,
+  unknown,
+  string
+> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => tasksApi.deletePermanent(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.tasks.all });
+      qc.invalidateQueries({ queryKey: queryKeys.tasks.infinite });
+      qc.invalidateQueries({ queryKey: ['tasks', 'count'] });
+      qc.invalidateQueries({ queryKey: queryKeys.auth.me });
+      qc.invalidateQueries({ queryKey: ['leaderboard'] });
+    },
+  });
+}
+
 export function useUnarchiveTask(): UseMutationResult<Task, unknown, string> {
   const qc = useQueryClient();
   return useMutation({

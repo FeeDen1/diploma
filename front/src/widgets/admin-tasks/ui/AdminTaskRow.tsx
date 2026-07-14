@@ -29,8 +29,10 @@ interface Props {
   onEdit: () => void;
   onArchive: () => void;
   onRestore: () => void;
+  onDeletePermanent: () => void;
   archiving: boolean;
   restoring: boolean;
+  deleting: boolean;
 }
 
 /**
@@ -44,8 +46,10 @@ export function AdminTaskRow({
   onEdit,
   onArchive,
   onRestore,
+  onDeletePermanent,
   archiving,
   restoring,
+  deleting,
 }: Props): React.ReactElement {
   const deadlineSeverity = task.expiresAt
     ? getDeadlineSeverity(task.expiresAt)
@@ -95,7 +99,7 @@ export function AdminTaskRow({
         ) : null}
       </View>
 
-      <View className="absolute top-2 right-2">
+      <View className="absolute top-2 right-2" style={{ gap: 8 }}>
         {scope === 'active' ? (
           <IconButton
             Icon={DeleteIcon}
@@ -105,13 +109,22 @@ export function AdminTaskRow({
             accessibilityLabel="Удалить"
           />
         ) : (
-          <IconButton
-            Icon={RefreshIcon}
-            tone="primary"
-            onPress={onRestore}
-            disabled={restoring}
-            accessibilityLabel="Восстановить"
-          />
+          <>
+            <IconButton
+              Icon={RefreshIcon}
+              tone="primary"
+              onPress={onRestore}
+              disabled={restoring}
+              accessibilityLabel="Восстановить"
+            />
+            <IconButton
+              Icon={DeleteIcon}
+              tone="danger"
+              onPress={onDeletePermanent}
+              disabled={deleting}
+              accessibilityLabel="Удалить навсегда"
+            />
+          </>
         )}
       </View>
     </TouchableOpacity>

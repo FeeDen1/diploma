@@ -7,7 +7,9 @@ import {
   HttpStatus,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -24,6 +26,8 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { TokenPayload } from '../auth/interfaces/token-payload.interface';
 import { RewardsService } from './rewards.service';
 import { CreateRewardDto } from './dto/create-reward.dto';
+import { UpdateRewardDto } from './dto/update-reward.dto';
+import { ListRewardsQueryDto } from './dto/list-rewards-query.dto';
 import { ReadRewardDto } from './dto/read-reward.dto';
 import { ReadRedemptionDto } from './dto/read-redemption.dto';
 
@@ -34,11 +38,20 @@ import { ReadRedemptionDto } from './dto/read-redemption.dto';
 export class RewardsController {
   constructor(private readonly rewardsService: RewardsService) {}
 
-  @ApiOperation({ summary: 'Список активных лотов' })
+  @ApiOperation({
+    summary:
+      'Список лотов. includeArchived=true (только admin) добавляет архивные',
+  })
   @ApiResponse({ status: 200, type: [ReadRewardDto] })
   @Get()
-  async list(): Promise<ReadRewardDto[]> {
-    const rewards = await this.rewardsService.listActive();
+  async list(
+    @CurrentUser() user: TokenPayload,
+    @Query() query: ListRewardsQueryDto,
+  ): Promise<ReadRewardDto[]> {
+    const rewards = await this.rewardsService.list(
+      user,
+      query.includeArchived === true,
+    );
     return rewards.map((reward) =>
       ReadRewardDto.from(reward, this.rewardsService.getImageUrl(reward)),
     );
@@ -57,7 +70,33 @@ export class RewardsController {
     return ReadRewardDto.from(reward, this.rewardsService.getImageUrl(reward));
   }
 
-  @ApiOperation({ summary: 'Удалить лот (admin, soft)' })
+  @ApiOperation({ summary: 'Обновить лот (admin)' })
+  @ApiResponse({ status: 200, type: ReadRewardDto })
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.admin)
+  @Patch(':id')
+  async update(
+    @CurrentUser() user: TokenPayload,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateRewardDto,
+  ): Promise<ReadRewardDto> {
+    const reward = await this.rewardsService.updateReward(user.id, id, dto);
+    return ReadRewardDto.from(reward, this.rewardsService.getImageUrl(reward));
+  }
+
+  @ApiOperation({ summary: 'Вернуть лот из архива в витрину (admin)' })
+  @ApiResponse({ status: 200, type: ReadRewardDto })
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.admin)
+  @Patch(':id/restore')
+  async restore(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<ReadRewardDto> {
+    const reward = await this.rewardsService.unarchiveReward(id);
+    return ReadRewardDto.from(reward, this.rewardsService.getImageUrl(reward));
+  }
+
+  @ApiOperation({ summary: 'Удалить лот (admin, soft — уходит в архив)' })
   @UseGuards(RolesGuard)
   @Roles(UserRole.admin)
   @HttpCode(HttpStatus.NO_CONTENT)
