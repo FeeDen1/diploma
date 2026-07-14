@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Animated,
   Image,
   Modal,
+  PanResponder,
   Text,
   TouchableOpacity,
   View,
@@ -54,6 +56,47 @@ export function SubmitAchievementSheet({
   const createSubmission = useCreateSubmission();
   const replaceFile = useReplaceMySubmissionFile();
   const toast = useToast();
+
+  // Свайп-вниз-для-закрытия. translateY стабилен между рендерами (useRef),
+  // а закрытие держим в ref, чтобы PanResponder (создаётся один раз) всегда
+  // звал актуальные reset()/onClose() без пересоздания.
+  const translateY = useRef(new Animated.Value(0)).current;
+  const closeRef = useRef<() => void>(() => undefined);
+  closeRef.current = (): void => {
+    Animated.timing(translateY, {
+      toValue: 700,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => {
+      translateY.setValue(0);
+      reset();
+      onClose();
+    });
+  };
+  const springBack = (): void => {
+    Animated.spring(translateY, {
+      toValue: 0,
+      useNativeDriver: true,
+      bounciness: 0,
+    }).start();
+  };
+  const panResponder = useRef(
+    PanResponder.create({
+      // Перехватываем только явный вертикальный свайп вниз, чтобы не мешать
+      // тапам по кнопке закрытия и заголовку.
+      onMoveShouldSetPanResponder: (_evt, g) =>
+        g.dy > 4 && Math.abs(g.dy) > Math.abs(g.dx),
+      onPanResponderMove: (_evt, g) => {
+        if (g.dy > 0) translateY.setValue(g.dy);
+      },
+      onPanResponderRelease: (_evt, g) => {
+        // Утянули достаточно далеко или резким флиском — закрываем.
+        if (g.dy > 120 || g.vy > 0.8) closeRef.current();
+        else springBack();
+      },
+      onPanResponderTerminate: () => springBack(),
+    }),
+  ).current;
 
   if (!achievement) return null;
 
@@ -139,17 +182,26 @@ export function SubmitAchievementSheet({
       onRequestClose={handleClose}
     >
       <View className="flex-1 justify-end bg-black/50">
-        <View className="bg-surface rounded-t-3xl px-5 pt-4 pb-8">
-          <View className="flex-row items-center justify-between mb-4">
-            <Text
-              className="text-lg font-bold text-text-primary flex-1 mr-3"
-              numberOfLines={2}
-            >
-              {achievement.title}
-            </Text>
-            <TouchableOpacity onPress={handleClose} activeOpacity={0.7}>
-              <CloseIcon size={24} color="rgb(100 116 139)" />
-            </TouchableOpacity>
+        <Animated.View
+          className="bg-surface rounded-t-3xl px-5 pt-3 pb-8"
+          style={{ transform: [{ translateY }] }}
+        >
+          {/* Верхняя зона-«ручка»: грабер + заголовок реагируют на свайп вниз. */}
+          <View {...panResponder.panHandlers}>
+            <View className="items-center mb-3">
+              <View className="w-10 h-1.5 rounded-full bg-border" />
+            </View>
+            <View className="flex-row items-center justify-between mb-4">
+              <Text
+                className="text-lg font-bold text-text-primary flex-1 mr-3"
+                numberOfLines={2}
+              >
+                {achievement.title}
+              </Text>
+              <TouchableOpacity onPress={handleClose} activeOpacity={0.7}>
+                <CloseIcon size={24} color="rgb(100 116 139)" />
+              </TouchableOpacity>
+            </View>
           </View>
 
           {achievement.coverUrl ? (
@@ -230,7 +282,7 @@ export function SubmitAchievementSheet({
             disabled={!asset || submitting}
             fullWidth
           />
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
