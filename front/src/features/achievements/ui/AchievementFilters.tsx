@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
-import { Modal } from '@shared/ui/Modal';
+import { BottomSheet } from '@shared/ui/BottomSheet';
 import { Button } from '@shared/ui/Button';
 import { FilterIcon } from '@shared/ui/icons';
 import {
@@ -105,7 +105,7 @@ function AchievementFiltersSheet({
   value,
   onApply,
   onClose,
-}: SheetProps): React.ReactElement {
+}: SheetProps): React.ReactElement | null {
   const [draft, setDraft] = useState<AchievementFiltersValue>(value);
 
   // Открытие шита — точка синхронизации черновика с применёнными фильтрами.
@@ -131,9 +131,12 @@ function AchievementFiltersSheet({
     }));
   };
 
+  if (!visible) return null;
+
   return (
-    <Modal visible={visible} title="Фильтры" onClose={onClose}>
-      <FilterSection title="Категория">
+    <BottomSheet title="Фильтры" onClose={onClose} maxHeight="85%">
+      <View className="px-5">
+        <FilterSection title="Категория">
         {TASK_CATEGORIES.map((category) => (
           <SelectChip
             key={category}
@@ -162,24 +165,21 @@ function AchievementFiltersSheet({
         />
       </FilterSection>
 
-      <View className="flex-row mt-1" style={{ gap: 12 }}>
-        <View className="flex-1">
-          <Button
-            title="Сбросить"
-            variant="secondary"
-            onPress={() => setDraft(EMPTY_ACHIEVEMENT_FILTERS)}
-            fullWidth
-          />
-        </View>
-        <View className="flex-1">
-          <Button
-            title="Применить"
-            onPress={() => onApply(draft)}
-            fullWidth
-          />
+        <View className="flex-row mt-1" style={{ gap: 12 }}>
+          <View className="flex-1">
+            <Button
+              title="Сбросить"
+              variant="secondary"
+              onPress={() => setDraft(EMPTY_ACHIEVEMENT_FILTERS)}
+              fullWidth
+            />
+          </View>
+          <View className="flex-1">
+            <Button title="Применить" onPress={() => onApply(draft)} fullWidth />
+          </View>
         </View>
       </View>
-    </Modal>
+    </BottomSheet>
   );
 }
 

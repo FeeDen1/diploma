@@ -15,6 +15,8 @@ import { CloseIcon } from '@shared/ui/icons';
 interface Props {
   /** Заголовок в шапке. */
   title: string;
+  /** Строка под заголовком (например email пользователя). */
+  subtitle?: string;
   /** Вызывается и по крестику, и по свайпу вниз, и по системному «назад». */
   onClose: () => void;
   children: React.ReactNode;
@@ -43,6 +45,7 @@ const DRAG_THRESHOLD = 6;
  */
 export function BottomSheet({
   title,
+  subtitle,
   onClose,
   children,
   maxHeight,
@@ -65,6 +68,14 @@ export function BottomSheet({
 
   const panResponder = useRef(
     PanResponder.create({
+      // Забираем тач на старте — иначе на пустом месте шапки и на грабере
+      // респондера нет вообще, и move-негоциация не запускается (жест ловился
+      // бы только там, где тач забрал ребёнок, т.е. на крестике).
+      // Это bubble-фаза: ребёнка (крестик) спрашивают первым, поэтому тап по
+      // нему продолжает работать.
+      onStartShouldSetPanResponder: () => true,
+      // А это capture-фаза: перехватывает вертикальное движение даже когда
+      // тач начался на крестике.
       onMoveShouldSetPanResponderCapture: (_evt, g) =>
         g.dy > DRAG_THRESHOLD && Math.abs(g.dy) > Math.abs(g.dx),
       onPanResponderMove: (_evt, g) => {
@@ -131,6 +142,11 @@ export function BottomSheet({
                 >
                   {title}
                 </Text>
+                {subtitle ? (
+                  <Text className="text-xs text-text-secondary">
+                    {subtitle}
+                  </Text>
+                ) : null}
               </View>
               {children}
             </View>

@@ -19,6 +19,7 @@ import { setUnauthorizedHandler } from '@shared/api';
 import { ThemeProvider, useTheme } from '@shared/theme';
 import { DialogProvider, ToastProvider } from '@shared/ui';
 import { storage } from '@shared/lib/storage';
+import { useAutoUpdate } from '@shared/lib/useAutoUpdate';
 import {
   usePushTokenSync,
   useNotificationRouting,
@@ -109,6 +110,9 @@ export default function RootLayout(): React.ReactElement | null {
   // Только после того как target вычислен, монтируем Stack — и в этот же
   // момент IndexScreen через useBootstrapTarget делает <Redirect />.
   const [target, setTarget] = useState<BootstrapTarget | null>(null);
+
+  // Забираем OTA-обновление сразу при старте, не дожидаясь второго запуска.
+  useAutoUpdate();
 
   // bootstrap-эффект: один раз при первом mount.
   useEffect(() => {

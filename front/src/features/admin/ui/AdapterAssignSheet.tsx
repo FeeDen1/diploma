@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Modal,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -9,7 +8,7 @@ import {
 } from 'react-native';
 import { isAxiosError } from 'axios';
 import { Button } from '@shared/ui/Button';
-import { CloseIcon } from '@shared/ui/icons';
+import { BottomSheet } from '@shared/ui/BottomSheet';
 import { useToast } from '@shared/ui';
 import { extractErrorMessage } from '@shared/api';
 import { DIRECTION_LABELS } from '@shared/api/groups';
@@ -154,25 +153,14 @@ function AdapterAssignSheetInner({
   const isLoading = allGroupsQuery.isLoading || curatedQuery.isLoading;
 
   return (
-    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
-      <View className="flex-1 justify-end bg-black/50">
-        <View
-          className="bg-surface rounded-t-3xl px-5 pt-4 pb-8"
-          style={{ maxHeight: '85%' }}
-        >
-          <View className="flex-row items-center justify-between mb-4">
-            <View className="flex-1 mr-3">
-              <Text className="text-lg font-bold text-text-primary">
-                {user.fullName}
-              </Text>
-              <Text className="text-xs text-text-secondary">{user.email}</Text>
-            </View>
-            <TouchableOpacity onPress={onClose} activeOpacity={0.7}>
-              <CloseIcon size={24} color="rgb(100 116 139)" />
-            </TouchableOpacity>
-          </View>
-
-          <Text className="text-sm text-text-secondary mb-3">
+    <BottomSheet
+      title={user.fullName}
+      subtitle={user.email}
+      onClose={onClose}
+      maxHeight="85%"
+    >
+      <View className="px-5">
+        <Text className="text-sm text-text-secondary mb-3">
             Выберите группы, которые этот человек будет курировать
           </Text>
 
@@ -223,23 +211,22 @@ function AdapterAssignSheetInner({
             </ScrollView>
           )}
 
-          <View className="flex-row gap-2 mt-4">
-            <Button
-              title="Отмена"
-              variant="outline"
-              onPress={onClose}
-              className="flex-1"
-              disabled={submitting}
-            />
-            <Button
-              title="Сохранить"
-              onPress={() => void handleSave()}
-              loading={submitting}
-              className="flex-1"
-            />
-          </View>
+        <View className="flex-row gap-2 mt-4">
+          <Button
+            title="Отмена"
+            variant="outline"
+            onPress={onClose}
+            className="flex-1"
+            disabled={submitting}
+          />
+          <Button
+            title="Сохранить"
+            onPress={() => void handleSave()}
+            loading={submitting}
+            className="flex-1"
+          />
         </View>
       </View>
-    </Modal>
+    </BottomSheet>
   );
 }
