@@ -150,7 +150,7 @@ export function EditRewardSheet({
   };
 
   return (
-    <BottomSheet title="Редактирование лота" onClose={onClose} maxHeight="90%">
+    <BottomSheet title="Редактирование лота" onClose={onClose} maxHeightRatio={0.9}>
       <ScrollView
         contentContainerStyle={{ paddingHorizontal: 20 }}
         keyboardShouldPersistTaps="handled"

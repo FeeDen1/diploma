@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { BottomSheet } from '@shared/ui/BottomSheet';
 import { Button } from '@shared/ui/Button';
 import { FilterIcon } from '@shared/ui/icons';
@@ -134,8 +134,12 @@ function AchievementFiltersSheet({
   if (!visible) return null;
 
   return (
-    <BottomSheet title="Фильтры" onClose={onClose} maxHeight="85%">
-      <View className="px-5">
+    <BottomSheet title="Фильтры" onClose={onClose} maxHeightRatio={0.85}>
+      {/* ScrollView — чтобы чипы с кнопками не вылезали за потолок высоты шита. */}
+      <ScrollView
+        contentContainerStyle={{ paddingHorizontal: 20 }}
+        showsVerticalScrollIndicator={false}
+      >
         <FilterSection title="Категория">
         {TASK_CATEGORIES.map((category) => (
           <SelectChip
@@ -178,7 +182,7 @@ function AchievementFiltersSheet({
             <Button title="Применить" onPress={() => onApply(draft)} fullWidth />
           </View>
         </View>
-      </View>
+      </ScrollView>
     </BottomSheet>
   );
 }

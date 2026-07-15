@@ -157,9 +157,14 @@ function AdapterAssignSheetInner({
       title={user.fullName}
       subtitle={user.email}
       onClose={onClose}
-      maxHeight="85%"
+      maxHeightRatio={0.85}
     >
-      <View className="px-5">
+      {/*
+        flexShrink: 1 обязателен: в RN он по умолчанию 0, и без него этот блок
+        не сжимается под maxHeight шита — список с кнопками вылезал за нижний
+        край. Сжиматься должен список (ниже), кнопки остаются на месте.
+      */}
+      <View className="px-5" style={{ flexShrink: 1 }}>
         <Text className="text-sm text-text-secondary mb-3">
             Выберите группы, которые этот человек будет курировать
           </Text>
@@ -171,7 +176,9 @@ function AdapterAssignSheetInner({
           ) : (
             <ScrollView
               showsVerticalScrollIndicator={false}
-              style={{ maxHeight: 360 }}
+              // maxHeight — потолок на больших экранах, flexShrink — чтобы на
+              // маленьких список ужимался, а не выталкивал кнопки за шит.
+              style={{ maxHeight: 360, flexShrink: 1 }}
             >
               {sortedGroups.map((group) => {
                 const checked = selectedIds.has(group.id);

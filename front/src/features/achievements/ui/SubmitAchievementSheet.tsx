@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Image,
+  ScrollView,
   Text,
   TouchableOpacity,
   View,
@@ -133,7 +134,15 @@ export function SubmitAchievementSheet({
 
   return (
     <BottomSheet title={achievement.title} onClose={handleClose}>
-      <View className="px-5">
+      {/*
+        ScrollView, а не View: контент высокий (обложка + описание + пикер +
+        кнопка) и на маленьких экранах не влезает в потолок высоты шита —
+        без скролла кнопка «Отправить» уезжала бы за нижний край.
+      */}
+      <ScrollView
+        contentContainerStyle={{ paddingHorizontal: 20 }}
+        showsVerticalScrollIndicator={false}
+      >
         {achievement.coverUrl ? (
             <Image
               source={{ uri: achievement.coverUrl }}
@@ -212,7 +221,7 @@ export function SubmitAchievementSheet({
           disabled={!asset || submitting}
           fullWidth
         />
-      </View>
+      </ScrollView>
     </BottomSheet>
   );
 }

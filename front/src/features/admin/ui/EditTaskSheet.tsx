@@ -185,7 +185,7 @@ export function EditTaskSheet({ task, onClose }: Props): React.ReactElement | nu
     <BottomSheet
       title="Редактирование задания"
       onClose={onClose}
-      maxHeight="90%"
+      maxHeightRatio={0.9}
     >
       <ScrollView
         contentContainerStyle={{ paddingHorizontal: 20 }}
