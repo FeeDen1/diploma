@@ -56,15 +56,12 @@ export function AdminTaskRow({
     : null;
   const deadlineLabel = task.expiresAt ? formatDeadline(task.expiresAt) : null;
 
-  // На активной карточке тап = редактировать. На архивной редактирование
-  // запрещаем — задание уже не у студентов, изменения сохранять некуда.
-  const handleCardPress = scope === 'active' ? onEdit : undefined;
-
+  // Тап по карточке = редактировать, в обоих режимах: архивное задание удобно
+  // посмотреть и поправить до того, как возвращать его студентам.
   return (
     <TouchableOpacity
-      onPress={handleCardPress}
-      activeOpacity={handleCardPress ? 0.85 : 1}
-      disabled={!handleCardPress}
+      onPress={onEdit}
+      activeOpacity={0.85}
       className="rounded-2xl bg-surface border border-border overflow-hidden flex-row"
     >
       <View className="w-24 h-24 bg-surface-secondary items-center justify-center">
@@ -79,7 +76,8 @@ export function AdminTaskRow({
         )}
       </View>
 
-      <View className="flex-1 p-3 pr-12">
+      {/* В архиве кнопок две в ряд — оставляем под них больше места справа. */}
+      <View className={`flex-1 p-3 ${scope === 'active' ? 'pr-12' : 'pr-24'}`}>
         <Text
           className="text-sm font-semibold text-text-primary"
           numberOfLines={2}
@@ -99,7 +97,7 @@ export function AdminTaskRow({
         ) : null}
       </View>
 
-      <View className="absolute top-2 right-2" style={{ gap: 8 }}>
+      <View className="absolute top-2 right-2 flex-row" style={{ gap: 8 }}>
         {scope === 'active' ? (
           <IconButton
             Icon={DeleteIcon}

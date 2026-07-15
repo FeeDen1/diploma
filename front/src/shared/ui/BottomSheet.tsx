@@ -6,6 +6,7 @@ import {
   Modal,
   PanResponder,
   Platform,
+  Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -150,14 +151,23 @@ export function BottomSheet({
         className="flex-1"
       >
         <View className="flex-1 justify-end">
-          {/* Затемнение — отдельным слоем, чтобы гаснуть, а не ехать вместе с шитом. */}
-          <Animated.View
-            pointerEvents="none"
-            style={[
-              StyleSheet.absoluteFill,
-              { backgroundColor: 'rgba(0,0,0,0.5)', opacity: backdropOpacity },
-            ]}
-          />
+          {/*
+            Затемнение — отдельным слоем, чтобы гаснуть, а не ехать вместе с
+            шитом. Тап по нему закрывает шит; сам шит — следующий сиблинг,
+            поэтому лежит поверх и свои тачи забирает себе.
+          */}
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={() => closeRef.current()}
+            accessibilityLabel="Закрыть"
+          >
+            <Animated.View
+              style={[
+                StyleSheet.absoluteFill,
+                { backgroundColor: 'rgba(0,0,0,0.5)', opacity: backdropOpacity },
+              ]}
+            />
+          </Pressable>
           {/*
             На Animated.View вешаем только transform: className на анимированных
             компонентах NativeWind обрабатывает не всегда, поэтому вся

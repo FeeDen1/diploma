@@ -83,16 +83,12 @@ export function AdminRewardsList(): React.ReactElement {
   };
 
   const renderItem = ({ item }: { item: Reward }): React.ReactElement => {
-    // На активной карточке тап = редактировать. На архивной — правки некуда
-    // сохранять (лот не в витрине), поэтому тап отключаем.
-    const handleCardPress =
-      scope === 'active' ? () => setEditing(item) : undefined;
-
+    // Тап = редактировать, в обоих режимах: архивный лот удобно поправить
+    // до того, как возвращать его в витрину.
     return (
       <TouchableOpacity
-        onPress={handleCardPress}
-        activeOpacity={handleCardPress ? 0.85 : 1}
-        disabled={!handleCardPress}
+        onPress={() => setEditing(item)}
+        activeOpacity={0.85}
         className="rounded-2xl bg-surface border border-border overflow-hidden flex-row"
       >
         <View className="w-24 h-24 bg-surface-secondary items-center justify-center">
