@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, View } from 'react-native';
+import { useScrollToTop } from '@react-navigation/native';
 import { FilterChip } from '@shared/ui/FilterChip';
 import { EmptyState } from '@shared/ui/EmptyState';
 import { ArchiveIcon } from '@shared/ui/icons';
@@ -39,6 +40,10 @@ export function AdminTasksList(): React.ReactElement {
   const toast = useToast();
   const confirm = useConfirm();
   const { refreshing, onRefresh } = useManualRefresh(tasksQuery.refetch);
+
+  // Повторный тап по иконке вкладки в таб-баре скроллит список наверх.
+  const listRef = useRef<FlatList<Task>>(null);
+  useScrollToTop(listRef);
 
   const data = useMemo<Task[]>(() => {
     const all = flattenInfiniteTasks(tasksQuery.data);
@@ -105,6 +110,7 @@ export function AdminTasksList(): React.ReactElement {
       </View>
 
       <FlatList
+        ref={listRef}
         data={data}
         keyExtractor={(task) => task.id}
         contentContainerStyle={{ padding: 16, paddingBottom: 24 }}

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, View } from 'react-native';
+import { useScrollToTop } from '@react-navigation/native';
 import { EmptyState } from '@shared/ui/EmptyState';
 import { TrophyIcon } from '@shared/ui/icons';
 import type { TasksSort } from '@shared/api/tasks';
@@ -34,6 +35,10 @@ export function AchievementsList(): React.ReactElement {
 
   const view = useAchievementsView({ filters, sort });
 
+  // Повторный тап по иконке вкладки в таб-баре скроллит ленту наверх.
+  const listRef = useRef<FlatList<AchievementView>>(null);
+  useScrollToTop(listRef);
+
   if (view.isLoading) {
     return (
       <View className="flex-1 items-center justify-center bg-background">
@@ -47,6 +52,7 @@ export function AchievementsList(): React.ReactElement {
       <AchievementFilters value={filters} onChange={setFilters} />
 
       <FlatList
+        ref={listRef}
         data={view.data}
         keyExtractor={(item) => item.id}
         numColumns={2}

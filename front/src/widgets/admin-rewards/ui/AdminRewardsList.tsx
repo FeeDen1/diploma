@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useScrollToTop } from '@react-navigation/native';
 import { EmptyState } from '@shared/ui/EmptyState';
 import { FilterChip } from '@shared/ui/FilterChip';
 import { IconButton } from '@shared/ui/IconButton';
@@ -46,6 +47,10 @@ export function AdminRewardsList(): React.ReactElement {
     includeArchived: scope === 'archive' ? true : undefined,
   });
   const { refreshing, onRefresh } = useManualRefresh(refetch);
+
+  // Повторный тап по иконке вкладки в таб-баре скроллит список наверх.
+  const listRef = useRef<FlatList<Reward>>(null);
+  useScrollToTop(listRef);
   const archive = useArchiveReward();
   const unarchive = useUnarchiveReward();
   const toast = useToast();
@@ -154,6 +159,7 @@ export function AdminRewardsList(): React.ReactElement {
       </View>
 
       <FlatList
+        ref={listRef}
         data={rewards}
         keyExtractor={(reward) => reward.id}
         renderItem={renderItem}

@@ -1,10 +1,11 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef } from 'react';
 import {
   ActivityIndicator,
   FlatList,
   Text,
   View,
 } from 'react-native';
+import { useScrollToTop } from '@react-navigation/native';
 import { EmptyState } from '@shared/ui/EmptyState';
 import { TrophyIcon } from '@shared/ui/icons';
 import { useMe } from '@entities/user';
@@ -23,6 +24,10 @@ export function StorePage(): React.ReactElement {
   const { data: me } = useMe();
   const { buy } = useRewardPurchase();
   const { refreshing, onRefresh } = useManualRefresh(refetch);
+
+  // Повторный тап по иконке вкладки в таб-баре скроллит витрину наверх.
+  const listRef = useRef<FlatList<Reward>>(null);
+  useScrollToTop(listRef);
 
   const available = me?.availablePoints ?? 0;
 
@@ -52,6 +57,7 @@ export function StorePage(): React.ReactElement {
       </View>
 
       <FlatList
+        ref={listRef}
         data={sortedRewards}
         keyExtractor={(reward) => reward.id}
         renderItem={renderItem}
