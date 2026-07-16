@@ -28,9 +28,7 @@ describe('TasksService.listTasks', () => {
   beforeEach(() => {
     tasksRepository = {
       archiveExpired: jest.fn().mockResolvedValue({ count: 0 }),
-      findAndCountForUser: jest
-        .fn()
-        .mockResolvedValue({ items: [], total: 0 }),
+      findAndCountForUser: jest.fn().mockResolvedValue({ items: [], total: 0 }),
       findAll: jest.fn(),
       findById: jest.fn(),
       create: jest.fn(),

@@ -1,6 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Task, TaskCategory, TaskType } from '../../../generated/prisma/client';
-import { ACHIEVEMENT_STATUSES, type AchievementStatus } from './achievement-status';
+import {
+  ACHIEVEMENT_STATUSES,
+  type AchievementStatus,
+} from './achievement-status';
 
 export class ReadTaskDto {
   @ApiProperty({ example: 'uuid', description: 'Уникальный идентификатор' })
@@ -24,7 +27,7 @@ export class ReadTaskDto {
 
   @ApiProperty({
     enum: TaskCategory,
-    example: TaskCategory.adaptation,
+    example: TaskCategory.study,
     description: 'Категория задания',
   })
   readonly category: TaskCategory;

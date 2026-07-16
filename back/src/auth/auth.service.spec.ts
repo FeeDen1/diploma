@@ -69,7 +69,7 @@ describe('AuthService.login', () => {
   });
 
   it('бросает 401, если пользователя нет', async () => {
-    usersService.findByEmail.mockResolvedValue(null as never);
+    usersService.findByEmail.mockResolvedValue(null);
 
     await expect(
       service.login({ email: 'x@x', password: 'p' }),

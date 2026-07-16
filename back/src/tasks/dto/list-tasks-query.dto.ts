@@ -50,7 +50,8 @@ function toArray(value: unknown): string[] | undefined {
 
 export class ListTasksQueryDto {
   @ApiPropertyOptional({
-    description: 'Фильтр по категориям (csv): socialization,adaptation,...',
+    description:
+      'Фильтр по категориям (csv): study,sport,outdoor,teambuilding,activism',
     isArray: true,
     enum: TaskCategory,
   })

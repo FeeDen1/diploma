@@ -38,7 +38,7 @@ export class CreateTaskDto {
 
   @ApiProperty({
     enum: TaskCategory,
-    example: TaskCategory.adaptation,
+    example: TaskCategory.study,
     description: 'Категория задания',
   })
   @IsNotEmpty({ message: 'Категория обязательна' })

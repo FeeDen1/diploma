@@ -164,9 +164,11 @@ enum TaskType {
 }
 
 enum TaskCategory {
-  socialization
-  adaptation
-  self_realization
+  study
+  sport
+  outdoor
+  teambuilding
+  activism
 }
 
 enum SubmissionStatus {

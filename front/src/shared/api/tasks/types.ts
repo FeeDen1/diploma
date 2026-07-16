@@ -1,24 +1,35 @@
 export type TaskType = 'general';
 
-export type TaskCategory = 'socialization' | 'adaptation' | 'self_realization';
+export type TaskCategory =
+  | 'study'
+  | 'sport'
+  | 'outdoor'
+  | 'teambuilding'
+  | 'activism';
 
 export const TASK_CATEGORY_LABELS: Record<TaskCategory, string> = {
-  socialization: 'Социализация',
-  adaptation: 'Адаптация',
-  self_realization: 'Самореализация',
+  study: 'Учеба',
+  sport: 'Спорт',
+  outdoor: 'Активный отдых',
+  teambuilding: 'Сплочение',
+  activism: 'Активизм',
 };
 
 /** Короткие лейблы для компактных чипов */
 export const TASK_CATEGORY_SHORT_LABELS: Record<TaskCategory, string> = {
-  socialization: 'Соц.',
-  adaptation: 'Адапт.',
-  self_realization: 'Самореал.',
+  study: 'Учеба',
+  sport: 'Спорт',
+  outdoor: 'Отдых',
+  teambuilding: 'Сплочение',
+  activism: 'Активизм',
 };
 
 export const TASK_CATEGORIES: TaskCategory[] = [
-  'socialization',
-  'adaptation',
-  'self_realization',
+  'study',
+  'sport',
+  'outdoor',
+  'teambuilding',
+  'activism',
 ];
 
 /**

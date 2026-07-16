@@ -39,7 +39,7 @@ export class GroupsRepository {
         members: { include: { user: true }, orderBy: { joinedAt: 'asc' } },
         adapters: { include: { user: true }, orderBy: { assignedAt: 'asc' } },
       },
-    }) as Promise<GroupWithRelations | null>;
+    });
   }
 
   async update(id: string, data: Prisma.GroupUpdateInput): Promise<Group> {

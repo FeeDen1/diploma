@@ -24,7 +24,7 @@ export class SubmissionsRepository {
     return this.prisma.taskSubmission.create({
       data: { taskId, studentId, submissionFileId },
       include: INCLUDE_RELATIONS,
-    }) as Promise<SubmissionWithRelations>;
+    });
   }
 
   async isSubmissionFileTaken(submissionFileId: string): Promise<boolean> {
@@ -72,14 +72,14 @@ export class SubmissionsRepository {
         : []),
     ]);
 
-    return submission as SubmissionWithRelations;
+    return submission;
   }
 
   async findById(id: string): Promise<SubmissionWithRelations | null> {
     return this.prisma.taskSubmission.findUnique({
       where: { id },
       include: INCLUDE_RELATIONS,
-    }) as Promise<SubmissionWithRelations | null>;
+    });
   }
 
   async findByStudentId(studentId: string): Promise<SubmissionWithRelations[]> {
@@ -87,7 +87,7 @@ export class SubmissionsRepository {
       where: { studentId },
       include: INCLUDE_RELATIONS,
       orderBy: { createdAt: 'desc' },
-    }) as Promise<SubmissionWithRelations[]>;
+    });
   }
 
   async findByTaskId(taskId: string): Promise<SubmissionWithRelations[]> {
@@ -95,7 +95,7 @@ export class SubmissionsRepository {
       where: { taskId },
       include: INCLUDE_RELATIONS,
       orderBy: { createdAt: 'desc' },
-    }) as Promise<SubmissionWithRelations[]>;
+    });
   }
 
   async findByTaskIdAndStudentIds(
@@ -106,7 +106,7 @@ export class SubmissionsRepository {
       where: { taskId, studentId: { in: studentIds } },
       include: INCLUDE_RELATIONS,
       orderBy: { createdAt: 'desc' },
-    }) as Promise<SubmissionWithRelations[]>;
+    });
   }
 
   async findExisting(taskId: string, studentId: string) {
@@ -144,7 +144,7 @@ export class SubmissionsRepository {
         : []),
     ]);
 
-    return submission as SubmissionWithRelations;
+    return submission;
   }
 
   async isGroupMember(userId: string): Promise<boolean> {

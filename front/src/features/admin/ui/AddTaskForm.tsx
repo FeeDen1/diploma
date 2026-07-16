@@ -24,7 +24,7 @@ import { useCreateTask } from '@entities/task';
 export function AddTaskForm(): React.ReactElement {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState<TaskCategory>('adaptation');
+  const [category, setCategory] = useState<TaskCategory>('study');
   const [points, setPoints] = useState('');
   const [coverUri, setCoverUri] = useState<string | null>(null);
   const [coverMime, setCoverMime] = useState<string | null>(null);
@@ -112,7 +112,7 @@ export function AddTaskForm(): React.ReactElement {
       setTitle('');
       setDescription('');
       setPoints('');
-      setCategory('adaptation');
+      setCategory('study');
       setCoverUri(null);
       setCoverMime(null);
       setCoverName(null);

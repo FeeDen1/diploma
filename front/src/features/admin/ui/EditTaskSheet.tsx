@@ -40,7 +40,7 @@ export function EditTaskSheet({ task, onClose }: Props): React.ReactElement | nu
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState<TaskCategory>('adaptation');
+  const [category, setCategory] = useState<TaskCategory>('study');
   const [points, setPoints] = useState('');
   const [expiresAt, setExpiresAt] = useState<Date | null>(null);
   const [error, setError] = useState('');
