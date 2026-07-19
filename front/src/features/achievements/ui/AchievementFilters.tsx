@@ -160,14 +160,21 @@ function AchievementFiltersSheet({
             onPress={() => toggleState(state)}
           />
         ))}
-        <SelectChip
-          label="Только с дедлайном"
-          selected={draft.temporalOnly}
-          onPress={() =>
+      </FilterSection>
+
+      {/*
+        «Только с дедлайном» — не состояние, а отдельное ограничение (сужает
+        выборку по И). Оформлен чекбоксом, а не чипом, чтобы визуально не
+        смешиваться с мультиселектом категорий/состояний.
+      */}
+      <View className="mb-5">
+        <DeadlineCheckbox
+          checked={draft.temporalOnly}
+          onToggle={() =>
             setDraft((prev) => ({ ...prev, temporalOnly: !prev.temporalOnly }))
           }
         />
-      </FilterSection>
+      </View>
 
         <View className="flex-row mt-1" style={{ gap: 12 }}>
           <View className="flex-1">
@@ -205,6 +212,40 @@ function FilterSection({
         {children}
       </View>
     </View>
+  );
+}
+
+interface DeadlineCheckboxProps {
+  checked: boolean;
+  onToggle: () => void;
+}
+
+/**
+ * Чекбокс «только задания с дедлайном» — отдельный вид фильтра (ограничение,
+ * а не мультиселект), поэтому и выглядит иначе: квадратный чекбокс со строкой,
+ * а не чип.
+ */
+function DeadlineCheckbox({
+  checked,
+  onToggle,
+}: DeadlineCheckboxProps): React.ReactElement {
+  return (
+    <TouchableOpacity
+      onPress={onToggle}
+      activeOpacity={0.7}
+      className="flex-row items-center py-1"
+    >
+      <View
+        className={`w-6 h-6 rounded-md border items-center justify-center mr-3 ${
+          checked ? 'bg-primary border-primary' : 'border-border'
+        }`}
+      >
+        {checked ? <Text className="text-white text-xs">✓</Text> : null}
+      </View>
+      <Text className="text-sm text-text-primary">
+        Только задания с дедлайном
+      </Text>
+    </TouchableOpacity>
   );
 }
 

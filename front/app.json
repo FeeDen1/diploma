@@ -27,6 +27,7 @@
     "android": {
       "package": "ru.spbu.pmi.pmtask",
       "versionCode": 1,
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"

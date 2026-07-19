@@ -40,11 +40,13 @@ export default function TabsLayout(): React.ReactElement {
         sceneStyle: { backgroundColor: colors.background },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
+        // Высоту и нижний паддинг НЕ задаём: react-navigation сам добавляет
+        // safe-area (home-индикатор iOS, жестовая полоса/кнопки Android). Ровно
+        // из-за прежних жёстких height/paddingBottom таб-бар и уезжал под
+        // системную навигацию, оставляя белую полосу.
         tabBarStyle: {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
-          paddingBottom: 4,
-          height: 56,
         },
         tabBarLabelStyle: { fontSize: labelSize, fontWeight: '500' },
         tabBarItemStyle: compact ? { paddingHorizontal: 0 } : undefined,

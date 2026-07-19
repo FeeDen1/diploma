@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "242124823810",
+    "project_id": "pm-task-36261",
+    "storage_bucket": "pm-task-36261.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:242124823810:android:551946dd474ca224e9361b",
+        "android_client_info": {
+          "package_name": "ru.spbu.pmi.pmtask"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDj3EmXsqbmDLqcsT5V9YcyKVqEKTatJM8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
