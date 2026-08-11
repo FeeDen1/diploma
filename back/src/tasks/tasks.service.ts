@@ -65,6 +65,7 @@ export class TasksService {
       categories: query.categories,
       states: query.states,
       temporalOnly: query.temporalOnly,
+      search: query.search,
       sort,
       limit,
       offset,

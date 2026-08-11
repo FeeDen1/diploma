@@ -34,6 +34,8 @@ export interface FindTasksForUserOptions {
   categories?: TaskCategory[];
   states?: AchievementStatus[];
   temporalOnly?: boolean;
+  /** Регистронезависимый поиск по подстроке в названии. */
+  search?: string;
   sort: TasksSort;
   limit: number;
   offset: number;
@@ -119,6 +121,12 @@ export class TasksRepository {
       conditions.push(
         Prisma.sql`${stateExpr} IN (${Prisma.join(options.states)})`,
       );
+    }
+    if (options.search) {
+      // ILIKE — регистронезависимый LIKE в Postgres. % экранируем, чтобы
+      // спецсимволы шаблона в запросе искались буквально.
+      const term = `%${options.search.replace(/[%_\\]/g, '\\$&')}%`;
+      conditions.push(Prisma.sql`t.title ILIKE ${term}`);
     }
 
     const whereSql =

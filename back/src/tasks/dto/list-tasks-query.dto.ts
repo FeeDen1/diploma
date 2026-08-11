@@ -6,7 +6,9 @@ import {
   IsIn,
   IsInt,
   IsOptional,
+  IsString,
   Max,
+  MaxLength,
   Min,
 } from 'class-validator';
 import { TaskCategory } from '../../../generated/prisma/client';
@@ -115,4 +117,15 @@ export class ListTasksQueryDto {
   @Transform(({ value }) => value === true || value === 'true')
   @IsBoolean()
   readonly includeArchived?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Поиск по названию задания (регистронезависимый, подстрока)',
+  })
+  @IsOptional()
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  @IsString()
+  @MaxLength(100)
+  readonly search?: string;
 }
