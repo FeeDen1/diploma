@@ -116,7 +116,7 @@ export function RegisterForm(): React.ReactElement {
           value={form.password}
           onChangeText={(password) => setForm((prev) => ({ ...prev, password }))}
           error={errors.password}
-          secureTextEntry
+          password
           autoCapitalize="none"
           autoCorrect={false}
           autoComplete="off"
@@ -131,7 +131,7 @@ export function RegisterForm(): React.ReactElement {
             setForm((prev) => ({ ...prev, confirmPassword }))
           }
           error={errors.confirmPassword}
-          secureTextEntry
+          password
           autoCapitalize="none"
           autoCorrect={false}
           autoComplete="off"

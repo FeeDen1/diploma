@@ -124,6 +124,8 @@ export interface ListTasksQuery {
   offset?: number;
   /** Доступно только админу. Включить архивные задания в выдачу. */
   includeArchived?: boolean;
+  /** Поиск по названию (регистронезависимая подстрока). */
+  search?: string;
 }
 
 export interface PaginatedTasksDto {

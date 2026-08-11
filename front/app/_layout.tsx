@@ -1,10 +1,18 @@
 import '../global.css';
+import '@shared/lib/global-font';
 import React, {
   createContext,
   useContext,
   useEffect,
   useState,
 } from 'react';
+import {
+  useFonts,
+  Rubik_400Regular,
+  Rubik_500Medium,
+  Rubik_600SemiBold,
+  Rubik_700Bold,
+} from '@expo-google-fonts/rubik';
 import { AppState, Platform } from 'react-native';
 import { Stack, router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -111,6 +119,15 @@ export default function RootLayout(): React.ReactElement | null {
   // момент IndexScreen через useBootstrapTarget делает <Redirect />.
   const [target, setTarget] = useState<BootstrapTarget | null>(null);
 
+  // Rubik: держим splash, пока начертания не загрузились, иначе текст мигнёт
+  // системным шрифтом до подмены на Rubik.
+  const [fontsLoaded] = useFonts({
+    Rubik_400Regular,
+    Rubik_500Medium,
+    Rubik_600SemiBold,
+    Rubik_700Bold,
+  });
+
   // Забираем OTA-обновление сразу при старте, не дожидаясь второго запуска.
   useAutoUpdate();
 
@@ -140,7 +157,7 @@ export default function RootLayout(): React.ReactElement | null {
   // гаснет в момент mounting Stack — и на 1-2 кадра виден initial route,
   // что и давало мелькание онбординга.
   useEffect(() => {
-    if (target === null) return;
+    if (target === null || !fontsLoaded) return;
     const id1 = requestAnimationFrame(() => {
       const id2 = requestAnimationFrame(() => {
         void SplashScreen.hideAsync().catch(() => undefined);
@@ -149,7 +166,7 @@ export default function RootLayout(): React.ReactElement | null {
     });
     let cleanupId = id1;
     return () => cancelAnimationFrame(cleanupId);
-  }, [target]);
+  }, [target, fontsLoaded]);
 
   useEffect(() => {
     setUnauthorizedHandler(() => {
@@ -174,7 +191,7 @@ export default function RootLayout(): React.ReactElement | null {
   // никакой Stack/экран не существует в дереве, expo-router физически не может
   // показать «промежуточный» онбординг или login. На экране ровно нативный
   // splash, без единого React-компонента поверх.
-  if (target === null) return null;
+  if (target === null || !fontsLoaded) return null;
 
   return (
     <BootstrapTargetContext.Provider value={target}>

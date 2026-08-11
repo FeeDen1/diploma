@@ -27,6 +27,7 @@ interface InfiniteTasksFilters {
   temporalOnly?: ListTasksQuery['temporalOnly'];
   sort?: ListTasksQuery['sort'];
   includeArchived?: ListTasksQuery['includeArchived'];
+  search?: ListTasksQuery['search'];
 }
 
 /**

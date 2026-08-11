@@ -6,11 +6,20 @@ import { notificationsApi, type DevicePlatform } from '@shared/api/notifications
 import { storage } from '@shared/lib/storage';
 
 /**
+ * Запуск через Expo Go: remote push (регистрация токена, каналы) вырезан из
+ * Expo Go начиная с Expo SDK 53 и бросает ошибку при вызове нативных методов.
+ * В Expo Go просто пропускаем регистрацию — пуши работают в dev/preview/prod
+ * сборках (там appOwnership !== 'expo').
+ */
+const isExpoGo = Constants.appOwnership === 'expo';
+
+/**
  * Получает Expo Push Token и регистрирует его на бэке.
  * Возвращает токен (нужен для unregister на logout) или null, если разрешение
  * не дано / устройство не физическое / запуск через Expo Go без projectId.
  */
 export async function registerDeviceToken(): Promise<string | null> {
+  if (isExpoGo) return null;
   if (!Device.isDevice) return null;
   if (Platform.OS !== 'ios' && Platform.OS !== 'android') return null;
 

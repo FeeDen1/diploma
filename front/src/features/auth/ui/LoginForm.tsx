@@ -101,7 +101,7 @@ export function LoginForm(): React.ReactElement {
             value={form.password}
             onChangeText={(password) => setForm((prev) => ({ ...prev, password }))}
             error={errors.password}
-            secureTextEntry
+            password
             autoCapitalize="none"
             autoCorrect={false}
             autoComplete="off"

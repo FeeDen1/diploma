@@ -408,24 +408,16 @@ export function ImageSourceOverlay({
   // claimOnStart — чтобы жест ловился по всей шапке, а не только на крестике.
   const headerPan = useRef(makePan(isVertical, true)).current;
   // Контент: перехватываем жест на перетаскивание шита, когда сетке некуда
-  // скроллиться.
-  //  - Свёрнут (offsetRef !== 0): скролл выключен, поэтому осознанный вертикальный
-  //    жест ведёт шит — вверх раскрыть, вниз закрыть. Обе платформы.
-  //  - Раскрыт, но сетка уже наверху (scrollY <= 0) и тянут вниз → закрываем.
-  //    На iOS срабатывает надёжно; на Android нативный FlatList может перехватить
-  //    жест, тогда закрытие остаётся за шапкой/грабером/крестиком.
-  //
-  // Порог CONTENT_DRAG выше обычного (4px): тап по фото на Android почти всегда
-  // даёт лёгкое дрожание, и при низком пороге захват шита «съедал» бы выбор
-  // фото. Малое движение → тап уходит в Pressable ячейки, крупный drag → шит.
-  const CONTENT_DRAG = 14;
+  // скроллиться. Тянут ВНИЗ, а сетка уже наверху → ведём шит (свернуть/закрыть)
+  // — на обеих платформах. Плюс на iOS в свёрнутом состоянии скролл выключен,
+  // поэтому весь жест ведёт шит. На Android capture в свёрнутом НЕ включаем:
+  // иначе пан-обёртка перехватывает касания и тап по фото не срабатывает —
+  // закрытие на Android остаётся за шапкой/грабером/крестиком/фоном.
   const contentPan = useRef(
     makePan((g) => {
-      if (Math.abs(g.dy) < CONTENT_DRAG || Math.abs(g.dy) <= Math.abs(g.dx)) {
-        return false;
-      }
-      if (offsetRef.current !== 0) return true;
+      if (!isVertical(g)) return false;
       if (g.dy > 0 && scrollYRef.current <= 0) return true;
+      if (Platform.OS === 'ios' && offsetRef.current !== 0) return true;
       return false;
     }),
   ).current;
@@ -530,15 +522,22 @@ export function ImageSourceOverlay({
             // bounces=false — чтобы overscroll не оставлял пустой зазор сверху
             // при сворачивании (когда скролл выключается в свёрнутом состоянии).
             bounces={false}
-            // Скролл только в раскрытом состоянии (обе платформы). В свёрнутом
-            // список не скроллится, поэтому весь вертикальный жест по контенту
-            // ловит contentPan: вверх — раскрыть, вниз — закрыть. Так одинаково
-            // работает на iOS и Android (когда сетка не скроллит, нативный
-            // FlatList не перехватывает жест у родителя).
-            scrollEnabled={expanded}
+            // iOS: скролл только в раскрытом состоянии — свёрнутый шит целиком
+            // отдаёт жест на перетаскивание (пан на всём шите). Android: список
+            // всегда скроллится и НАТИВНО отдаёт тап Pressable-ячейке (если тут
+            // выключить скролл, пан-обёртка перехватывает касания и фото
+            // перестают кликаться) — поэтому пан на Android висит только на шапке.
+            scrollEnabled={Platform.OS === 'android' ? true : expanded}
             scrollEventThrottle={16}
             onScroll={(e) => {
-              scrollYRef.current = e.nativeEvent.contentOffset.y;
+              const y = e.nativeEvent.contentOffset.y;
+              scrollYRef.current = y;
+              // Android: скролл сетки вверх из свёрнутого состояния раскрывает
+              // шит (на iOS это делает contentPan, а список в свёрнутом виде
+              // не скроллится).
+              if (Platform.OS === 'android' && offsetRef.current !== 0 && y > 20) {
+                snapTo(0);
+              }
             }}
             renderItem={({ item }) =>
               item === 'camera' ? (

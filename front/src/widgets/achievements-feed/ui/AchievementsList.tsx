@@ -31,6 +31,7 @@ export function AchievementsList(): React.ReactElement {
   const [active, setActive] = useState<{
     achievement: AchievementView;
     resubmitId?: string;
+    readOnly?: boolean;
   } | null>(null);
 
   const view = useAchievementsView({ filters, sort });
@@ -64,6 +65,11 @@ export function AchievementsList(): React.ReactElement {
                 setActive({ achievement: item });
               } else if (item.status === 'rejected' && item.submission) {
                 setActive({ achievement: item, resubmitId: item.submission.id });
+              } else if (
+                item.status === 'pending' ||
+                item.status === 'approved'
+              ) {
+                setActive({ achievement: item, readOnly: true });
               }
             }}
           />
@@ -97,6 +103,7 @@ export function AchievementsList(): React.ReactElement {
       <SubmitAchievementSheet
         achievement={active?.achievement ?? null}
         resubmitId={active?.resubmitId}
+        readOnly={active?.readOnly}
         onClose={() => setActive(null)}
       />
     </View>

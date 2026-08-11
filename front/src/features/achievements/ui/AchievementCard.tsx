@@ -50,10 +50,14 @@ export function AchievementCard({
   const showNewBadge =
     achievement.status === 'available' &&
     isRecentlyCreated(achievement.createdAt);
-  // Кликабельны: доступные (новая сдача) и отклонённые (перезалить фото).
+  // Кликабельны: доступные (новая сдача) и отклонённые (перезалить фото) — если
+  // не просрочены; «на проверке» и «засчитано» — всегда, для просмотра карточки.
   const clickable =
-    !achievement.isExpired &&
-    (achievement.status === 'available' || achievement.status === 'rejected');
+    (!achievement.isExpired &&
+      (achievement.status === 'available' ||
+        achievement.status === 'rejected')) ||
+    achievement.status === 'pending' ||
+    achievement.status === 'approved';
 
   return (
     <GridCard

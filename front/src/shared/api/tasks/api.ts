@@ -24,6 +24,7 @@ function buildListParams(
   }
   if (query.temporalOnly) params.temporalOnly = 'true';
   if (query.includeArchived) params.includeArchived = 'true';
+  if (query.search) params.search = query.search;
   if (query.sort) params.sort = query.sort;
   if (query.limit !== undefined) params.limit = query.limit;
   if (query.offset !== undefined) params.offset = query.offset;

@@ -11,19 +11,33 @@ import {
   Text,
   TouchableOpacity,
   View,
+  type GestureResponderHandlers,
   type LayoutChangeEvent,
 } from 'react-native';
 import { CloseIcon } from '@shared/ui/icons';
 import { useSheetImageOverlay } from './image-picker/ImagePickerProvider';
 
+/** Контекст, который получает children-функция в «голом» (bare) режиме. */
+export interface SheetRenderContext {
+  /** Навесить на область-«ручку» (шапку/герой), чтобы работал свайп-закрытие. */
+  drag: GestureResponderHandlers;
+  /** Программно закрыть шит с анимацией (например по крестику на обложке). */
+  close: () => void;
+}
+
 interface Props {
-  /** Заголовок в шапке. */
-  title: string;
+  /** Заголовок в шапке. Не нужен в bare-режиме (шапку рисует контент). */
+  title?: string;
   /** Строка под заголовком (например email пользователя). */
   subtitle?: string;
   /** Вызывается и по крестику, и по свайпу вниз, и по системному «назад». */
   onClose: () => void;
-  children: React.ReactNode;
+  /**
+   * Контент. Обычный ReactNode — рисуется под встроенной шапкой. Функция —
+   * вызывается с {drag, close} (для bare-режима: контент сам вешает свайп и
+   * рисует свою шапку/крестик поверх обложки).
+   */
+  children: React.ReactNode | ((ctx: SheetRenderContext) => React.ReactNode);
   /**
    * Доля высоты экрана, которую шит может занять (0..1). По умолчанию 0.9.
    *
@@ -32,6 +46,12 @@ interface Props {
    * '90%' молча не работал и шит уезжал под нижний край экрана.
    */
   maxHeightRatio?: number;
+  /**
+   * «Голый» режим: без встроенной шапки (грабер/заголовок/крестик). Контент
+   * рисуется от самого верха и обрезается по скруглению — для иммерсивных шитов
+   * с обложкой-героем. Свайп-закрытие и close пробрасываются в children-функцию.
+   */
+  bare?: boolean;
 }
 
 const CLOSE_DISTANCE = 100;
@@ -65,6 +85,7 @@ export function BottomSheet({
   onClose,
   children,
   maxHeightRatio = 0.9,
+  bare = false,
 }: Props): React.ReactElement {
   const maxHeight = Dimensions.get('window').height * maxHeightRatio;
   // Пикер фото, всплывающий поверх этого шита (см. useSheetImageOverlay).
@@ -180,35 +201,51 @@ export function BottomSheet({
             onLayout={handleLayout}
             style={{ transform: [{ translateY }] }}
           >
-            <View className="bg-surface rounded-t-3xl pt-3 pb-8" style={{ maxHeight }}>
-              <View {...panResponder.panHandlers} className="px-5 pb-4">
-                {/*
-                  Грабер по центру, крестик — на том же уровне справа.
-                  Высота строки = размеру иконки (24), грабер центрируется
-                  внутри, крестик растянут по высоте и центрирован.
-                */}
-                <View className="h-6 items-center justify-center mb-3">
-                  <View className="w-10 h-1.5 rounded-full bg-border" />
-                  <TouchableOpacity
-                    onPress={() => closeRef.current()}
-                    activeOpacity={0.7}
-                    hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                    className="absolute right-0 top-0 bottom-0 justify-center"
-                  >
-                    <CloseIcon size={24} color="rgb(100 116 139)" />
-                  </TouchableOpacity>
+            <View
+              className={`bg-surface rounded-t-3xl pb-8 ${
+                bare ? 'overflow-hidden' : 'pt-3'
+              }`}
+              style={{ maxHeight }}
+            >
+              {bare ? null : (
+                <View {...panResponder.panHandlers} className="px-5 pb-4">
+                  {/*
+                    Грабер по центру, крестик — на том же уровне справа.
+                    Высота строки = размеру иконки (24), грабер центрируется
+                    внутри, крестик растянут по высоте и центрирован.
+                  */}
+                  <View className="h-6 items-center justify-center mb-3">
+                    <View className="w-10 h-1.5 rounded-full bg-border" />
+                    <TouchableOpacity
+                      onPress={() => closeRef.current()}
+                      activeOpacity={0.7}
+                      hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                      className="absolute right-0 top-0 bottom-0 justify-center"
+                    >
+                      <CloseIcon size={24} color="rgb(100 116 139)" />
+                    </TouchableOpacity>
+                  </View>
+                  {title ? (
+                    <Text
+                      className="text-lg font-bold text-text-primary"
+                      numberOfLines={2}
+                    >
+                      {title}
+                    </Text>
+                  ) : null}
+                  {subtitle ? (
+                    <Text className="text-xs text-text-secondary">
+                      {subtitle}
+                    </Text>
+                  ) : null}
                 </View>
-                <Text
-                  className="text-lg font-bold text-text-primary"
-                  numberOfLines={2}
-                >
-                  {title}
-                </Text>
-                {subtitle ? (
-                  <Text className="text-xs text-text-secondary">{subtitle}</Text>
-                ) : null}
-              </View>
-              {children}
+              )}
+              {typeof children === 'function'
+                ? children({
+                    drag: panResponder.panHandlers,
+                    close: () => closeRef.current(),
+                  })
+                : children}
             </View>
           </Animated.View>
         </View>

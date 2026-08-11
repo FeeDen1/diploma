@@ -13,6 +13,7 @@
     "lint": "eslint \"src/**/*.{ts,tsx}\" \"app/**/*.{ts,tsx}\""
   },
   "dependencies": {
+    "@expo-google-fonts/rubik": "^0.4.2",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/datetimepicker": "8.4.4",
     "@tanstack/query-async-storage-persister": "^5.0.0",

@@ -1,7 +1,8 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, View } from 'react-native';
 import { useScrollToTop } from '@react-navigation/native';
 import { FilterChip } from '@shared/ui/FilterChip';
+import { SearchBar } from '@shared/ui/SearchBar';
 import { EmptyState } from '@shared/ui/EmptyState';
 import { ArchiveIcon } from '@shared/ui/icons';
 import { useConfirm, useToast } from '@shared/ui';
@@ -31,8 +32,18 @@ export function AdminTasksList(): React.ReactElement {
   const [scope, setScope] = useState<AdminTasksScope>('active');
   const [editing, setEditing] = useState<Task | null>(null);
 
+  // Поиск с дебаунсом: набранное в поле применяем к запросу через 300 мс,
+  // чтобы не дёргать бэк на каждый символ.
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
+  useEffect(() => {
+    const id = setTimeout(() => setSearch(searchInput.trim()), 300);
+    return () => clearTimeout(id);
+  }, [searchInput]);
+
   const tasksQuery = useInfiniteTasks({
     includeArchived: scope === 'archive' ? true : undefined,
+    search: search || undefined,
   });
   const archive = useArchiveTask();
   const unarchive = useUnarchiveTask();
@@ -109,6 +120,14 @@ export function AdminTasksList(): React.ReactElement {
         />
       </View>
 
+      <View className="px-4 pb-2">
+        <SearchBar
+          value={searchInput}
+          onChangeText={setSearchInput}
+          placeholder="Поиск по названию"
+        />
+      </View>
+
       <FlatList
         ref={listRef}
         data={data}
@@ -144,11 +163,19 @@ export function AdminTasksList(): React.ReactElement {
           ) : (
             <EmptyState
               Icon={ArchiveIcon}
-              title={scope === 'active' ? 'Нет активных заданий' : 'Архив пуст'}
+              title={
+                search
+                  ? 'Ничего не найдено'
+                  : scope === 'active'
+                    ? 'Нет активных заданий'
+                    : 'Архив пуст'
+              }
               description={
-                scope === 'active'
-                  ? 'Создайте новое задание во вкладке «Создать»'
-                  : 'Архивные задания появятся здесь'
+                search
+                  ? `По запросу «${search}» заданий нет`
+                  : scope === 'active'
+                    ? 'Создайте новое задание во вкладке «Создать»'
+                    : 'Архивные задания появятся здесь'
               }
             />
           )
