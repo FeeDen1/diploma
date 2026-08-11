@@ -17,7 +17,7 @@ import { StatusBar } from 'expo-status-bar';
 import { queryClient } from '@shared/api/query-client';
 import { setUnauthorizedHandler } from '@shared/api';
 import { ThemeProvider, useTheme } from '@shared/theme';
-import { DialogProvider, ToastProvider } from '@shared/ui';
+import { DialogProvider, ImagePickerProvider, ToastProvider } from '@shared/ui';
 import { storage } from '@shared/lib/storage';
 import { useAutoUpdate } from '@shared/lib/useAutoUpdate';
 import {
@@ -186,15 +186,17 @@ export default function RootLayout(): React.ReactElement | null {
           <ThemeProvider>
             <ToastProvider>
               <DialogProvider>
-                <ThemedStatusBar />
-                <PushNotificationsBridge />
-                <Stack
-                  initialRouteName="index"
-                  screenOptions={{
-                    headerShown: false,
-                    animation: 'none',
-                  }}
-                />
+                <ImagePickerProvider>
+                  <ThemedStatusBar />
+                  <PushNotificationsBridge />
+                  <Stack
+                    initialRouteName="index"
+                    screenOptions={{
+                      headerShown: false,
+                      animation: 'none',
+                    }}
+                  />
+                </ImagePickerProvider>
               </DialogProvider>
             </ToastProvider>
           </ThemeProvider>

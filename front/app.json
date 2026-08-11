@@ -2,7 +2,7 @@
   "expo": {
     "name": "PM-Task",
     "slug": "pm-task",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "platforms": ["ios", "android"],
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -54,6 +54,19 @@
         {
           "icon": "./assets/notification-icon.png",
           "color": "#5856D6"
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Доступ к фото нужен, чтобы выбрать снимок для сдачи задания или аватара.",
+          "isAccessMediaLocationEnabled": false
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Камера нужна, чтобы сфотографировать доказательство выполнения задания."
         }
       ]
     ],

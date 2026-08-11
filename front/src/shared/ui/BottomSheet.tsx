@@ -14,6 +14,7 @@ import {
   type LayoutChangeEvent,
 } from 'react-native';
 import { CloseIcon } from '@shared/ui/icons';
+import { useSheetImageOverlay } from './image-picker/ImagePickerProvider';
 
 interface Props {
   /** Заголовок в шапке. */
@@ -66,6 +67,8 @@ export function BottomSheet({
   maxHeightRatio = 0.9,
 }: Props): React.ReactElement {
   const maxHeight = Dimensions.get('window').height * maxHeightRatio;
+  // Пикер фото, всплывающий поверх этого шита (см. useSheetImageOverlay).
+  const sheetImageOverlay = useSheetImageOverlay();
   // Стартуем за нижней границей экрана: до первого onLayout высота шита
   // неизвестна, а показывать его в этот момент нельзя — будет вспышка.
   const translateY = useRef(
@@ -209,6 +212,12 @@ export function BottomSheet({
             </View>
           </Animated.View>
         </View>
+        {/*
+          Пикер фото рендерится и здесь — чтобы всплывать ПОВЕРХ открытого шита
+          (корневая копия осталась бы под этой Modal). useSheetImageOverlay
+          заодно помечает шит как «хост», чтобы корневая копия не дублировала.
+        */}
+        {sheetImageOverlay}
       </KeyboardAvoidingView>
     </Modal>
   );

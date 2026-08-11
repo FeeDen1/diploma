@@ -6,11 +6,10 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
 import { Button } from '@shared/ui/Button';
 import { Input } from '@shared/ui/Input';
 import { DateTimeField } from '@shared/ui/DateTimeField';
-import { useAlert, useToast } from '@shared/ui';
+import { useAlert, useToast, useImagePicker } from '@shared/ui';
 import { extractErrorMessage } from '@shared/api';
 import { prepareImageForUpload } from '@shared/lib/prepare-image';
 import { filesApi } from '@shared/api/files';
@@ -35,25 +34,14 @@ export function AddTaskForm(): React.ReactElement {
 
   const create = useCreateTask();
   const alert = useAlert();
+  const { pickImage } = useImagePicker();
   const toast = useToast();
 
   const pickCover = async (): Promise<void> => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      await alert({
-        title: 'Доступ к галерее',
-        message: 'Разрешите доступ к фото в настройках.',
-        tone: 'warning',
-      });
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      quality: 1,
-    });
-    if (result.canceled || !result.assets[0]) return;
+    const asset = await pickImage();
+    if (!asset) return;
     try {
-      const prepared = await prepareImageForUpload(result.assets[0]);
+      const prepared = await prepareImageForUpload(asset);
       setCoverUri(prepared.uri);
       setCoverMime(prepared.mimeType);
       setCoverName(prepared.fileName);

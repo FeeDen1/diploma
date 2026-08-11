@@ -1,9 +1,8 @@
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
 import { Avatar } from '@shared/ui/Avatar';
 import { CameraIcon } from '@shared/ui/icons';
-import { useAlert } from '@shared/ui';
+import { useAlert, useImagePicker } from '@shared/ui';
 import { extractErrorMessage } from '@shared/api';
 import { prepareImageForUpload } from '@shared/lib/prepare-image';
 import { filesApi } from '@shared/api/files';
@@ -20,27 +19,14 @@ export function ProfileHeader({ user }: Props): React.ReactElement {
   const { data: myGroups } = useMyGroups();
   const primaryGroup = myGroups?.memberOf[0] ?? null;
   const alert = useAlert();
+  const { pickImage } = useImagePicker();
 
   const handleChangeAvatar = async (): Promise<void> => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      await alert({
-        title: 'Доступ к галерее',
-        message: 'Разрешите доступ к фото в настройках.',
-        tone: 'warning',
-      });
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 1,
-    });
-    if (result.canceled || !result.assets[0]) return;
+    const asset = await pickImage({ allowsEditing: true, aspect: [1, 1] });
+    if (!asset) return;
 
     try {
-      const prepared = await prepareImageForUpload(result.assets[0]);
+      const prepared = await prepareImageForUpload(asset);
       const file = await filesApi.upload({
         uri: prepared.uri,
         name: prepared.fileName,

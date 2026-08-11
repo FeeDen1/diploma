@@ -1,5 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Dimensions,
+  Text,
+  TouchableOpacity,
+  View,
+  type LayoutChangeEvent,
+} from 'react-native';
 import {
   getCoreRowModel,
   useReactTable,
@@ -19,7 +26,17 @@ import {
 } from '@entities/leaderboard';
 import { LeaderboardFilters } from '@features/leaderboard';
 
-const PAGE_SIZE = 20;
+// Фиксированная высота строки. Она же — единица расчёта, сколько строк влезает
+// в тело. Строке задаём ровно ROW_HEIGHT (аватар sm = 32px + отступы), поэтому
+// floor(высота_тела / ROW_HEIGHT) даёт точное число без «лишней» строки.
+const ROW_HEIGHT = 56;
+// Прикидочный стартовый размер страницы до первого onLayout: высота экрана
+// минус фильтры/шапка/футер/таб-бар (~320). Чтобы первый запрос сразу был
+// близок к тому, что влезет, без лишнего дозапроса.
+const INITIAL_PAGE_SIZE = Math.max(
+  1,
+  Math.floor((Dimensions.get('window').height - 320) / ROW_HEIGHT),
+);
 
 /**
  * Виджет таблицы лидерборда. Композирует:
@@ -35,8 +52,17 @@ export function LeaderboardTable(): React.ReactElement {
   const [groupId, setGroupId] = useState<string | null>(null);
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
-    pageSize: PAGE_SIZE,
+    pageSize: INITIAL_PAGE_SIZE,
   });
+
+  // Подгоняем размер страницы под реальную высоту тела: сколько строк влезло,
+  // столько и на странице — остальное листается пагинацией, без скролла.
+  const handleBodyLayout = (event: LayoutChangeEvent): void => {
+    const fit = Math.max(1, Math.floor(event.nativeEvent.layout.height / ROW_HEIGHT));
+    setPagination((prev) =>
+      prev.pageSize === fit ? prev : { pageIndex: 0, pageSize: fit },
+    );
+  };
   const [sorting, setSorting] = useState<SortingState>([
     { id: 'ratingTotal', desc: true },
   ]);
@@ -109,11 +135,11 @@ export function LeaderboardTable(): React.ReactElement {
   const handleFilterChange = {
     direction: (nextDirection: Direction | null) => {
       setDirection(nextDirection);
-      setPagination({ pageIndex: 0, pageSize: PAGE_SIZE });
+      setPagination((prev) => ({ ...prev, pageIndex: 0 }));
     },
     group: (nextGroupId: string | null) => {
       setGroupId(nextGroupId);
-      setPagination({ pageIndex: 0, pageSize: PAGE_SIZE });
+      setPagination((prev) => ({ ...prev, pageIndex: 0 }));
     },
   };
 
@@ -162,8 +188,13 @@ export function LeaderboardTable(): React.ReactElement {
         })}
       </View>
 
-      {/* Тело */}
-      <View className="flex-1">
+      {/* Тело без скролла: onLayout меряет доступную высоту, а размер страницы
+          подгоняется так, чтобы строки ровно влезали (overflow-hidden отсекает
+          «хвост», если строка чуть выше расчётной). Остальное — пагинацией. */}
+      <View
+        className="flex-1 overflow-hidden"
+        onLayout={handleBodyLayout}
+      >
         {rows.length === 0 ? (
           <EmptyState
             Icon={PodiumIcon}
@@ -176,7 +207,8 @@ export function LeaderboardTable(): React.ReactElement {
             return (
               <View
                 key={row.id}
-                className="flex-row items-center px-4 py-3 border-b border-border"
+                style={{ height: ROW_HEIGHT }}
+                className="flex-row items-center px-4 border-b border-border"
               >
                 <View
                   style={{ flex: columnFlex('rank') }}

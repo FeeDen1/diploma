@@ -8,11 +8,10 @@ import { EmptyState } from '@shared/ui/EmptyState';
 import { ScreenHeader } from '@shared/ui/ScreenHeader';
 import { UploadedImage } from '@shared/ui/UploadedImage';
 import { AlbumsIcon } from '@shared/ui/icons';
-import { useConfirm, useToast } from '@shared/ui';
+import { useConfirm, useToast, useImagePicker } from '@shared/ui';
 import { extractErrorMessage } from '@shared/api';
 import { prepareImageForUpload } from '@shared/lib/prepare-image';
 import { TASK_CATEGORY_LABELS } from '@shared/api/tasks';
-import * as ImagePicker from 'expo-image-picker';
 import {
   useDeleteMySubmission,
   useMySubmissions,
@@ -43,21 +42,14 @@ export function MySubmissionsPage(): React.ReactElement {
   const deleteMutation = useDeleteMySubmission();
   const replaceFile = useReplaceMySubmissionFile();
   const toast = useToast();
+  const { pickImage } = useImagePicker();
   const confirm = useConfirm();
 
   const handleResubmit = async (submission: MySubmission): Promise<void> => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      toast.show('Нужен доступ к фото', 'error');
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      quality: 1,
-    });
-    if (result.canceled || !result.assets[0]) return;
+    const asset = await pickImage();
+    if (!asset) return;
     try {
-      const prepared = await prepareImageForUpload(result.assets[0]);
+      const prepared = await prepareImageForUpload(asset);
       replaceFile.mutate(
         {
           id: submission.id,

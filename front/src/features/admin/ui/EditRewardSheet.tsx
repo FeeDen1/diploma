@@ -6,11 +6,10 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
 import { Button } from '@shared/ui/Button';
 import { Input } from '@shared/ui/Input';
 import { BottomSheet } from '@shared/ui/BottomSheet';
-import { useAlert, useToast } from '@shared/ui';
+import { useAlert, useToast, useImagePicker } from '@shared/ui';
 import { extractErrorMessage } from '@shared/api';
 import { prepareImageForUpload } from '@shared/lib/prepare-image';
 import { filesApi } from '@shared/api/files';
@@ -35,6 +34,7 @@ export function EditRewardSheet({
   const update = useUpdateReward();
   const toast = useToast();
   const alert = useAlert();
+  const { pickImage } = useImagePicker();
 
   const [title, setTitle] = useState('');
   const [price, setPrice] = useState('');
@@ -60,22 +60,10 @@ export function EditRewardSheet({
   if (!reward) return null;
 
   const pickCover = async (): Promise<void> => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      await alert({
-        title: 'Доступ к галерее',
-        message: 'Разрешите доступ к фото в настройках.',
-        tone: 'warning',
-      });
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      quality: 1,
-    });
-    if (result.canceled || !result.assets[0]) return;
+    const asset = await pickImage();
+    if (!asset) return;
     try {
-      const prepared = await prepareImageForUpload(result.assets[0]);
+      const prepared = await prepareImageForUpload(asset);
       setCoverUri(prepared.uri);
       setCoverMime(prepared.mimeType);
       setCoverName(prepared.fileName);

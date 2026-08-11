@@ -21,3 +21,8 @@ export {
   useConfirm,
   useAlert,
 } from './dialog/DialogProvider';
+export {
+  ImagePickerProvider,
+  ImageSourceOverlay,
+  useImagePicker,
+} from './image-picker/ImagePickerProvider';

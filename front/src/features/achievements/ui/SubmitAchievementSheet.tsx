@@ -7,11 +7,10 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
 import { Button } from '@shared/ui/Button';
 import { BottomSheet } from '@shared/ui/BottomSheet';
 import { CameraIcon } from '@shared/ui/icons';
-import { useToast } from '@shared/ui';
+import { useToast, useImagePicker } from '@shared/ui';
 import { TASK_CATEGORY_LABELS } from '@shared/api/tasks';
 import { extractErrorMessage } from '@shared/api';
 import { prepareImageForUpload } from '@shared/lib/prepare-image';
@@ -55,6 +54,7 @@ export function SubmitAchievementSheet({
   const createSubmission = useCreateSubmission();
   const replaceFile = useReplaceMySubmissionFile();
   const toast = useToast();
+  const { pickImage: pickFromSource } = useImagePicker();
 
   if (!achievement) return null;
 
@@ -72,18 +72,10 @@ export function SubmitAchievementSheet({
   };
 
   const pickImage = async (): Promise<void> => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      setErrorText('Нужен доступ к фотографиям. Включите его в настройках.');
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      quality: 1,
-    });
-    if (result.canceled || !result.assets[0]) return;
+    const picked = await pickFromSource();
+    if (!picked) return;
     try {
-      const prepared = await prepareImageForUpload(result.assets[0]);
+      const prepared = await prepareImageForUpload(picked);
       setAsset(prepared);
       setErrorText('');
     } catch {
