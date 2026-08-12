@@ -209,10 +209,21 @@ export function ImagePickerProvider({
   const onPickAsset = useCallback(
     (asset: MediaLibrary.Asset): void => {
       void (async () => {
-        // uri из getAssetsAsync на iOS — ph://, для загрузки нужен localUri.
-        const info = await MediaLibrary.getAssetInfoAsync(asset);
+        // На iOS uri из getAssetsAsync — ph://, для загрузки нужен localUri
+        // (getAssetInfoAsync). На Android asset.uri уже file://content:// и
+        // пригоден напрямую — лишний getAssetInfoAsync там только тормозит и
+        // может кинуть, из-за чего finish не вызывался и фото «не выбиралось».
+        let uri = asset.uri;
+        if (Platform.OS === 'ios') {
+          try {
+            const info = await MediaLibrary.getAssetInfoAsync(asset);
+            uri = info.localUri ?? asset.uri;
+          } catch {
+            uri = asset.uri;
+          }
+        }
         finish({
-          uri: info.localUri ?? asset.uri,
+          uri,
           fileName: asset.filename,
           mimeType: mimeFromName(asset.filename),
           width: asset.width,
@@ -408,16 +419,16 @@ export function ImageSourceOverlay({
   // claimOnStart — чтобы жест ловился по всей шапке, а не только на крестике.
   const headerPan = useRef(makePan(isVertical, true)).current;
   // Контент: перехватываем жест на перетаскивание шита, когда сетке некуда
-  // скроллиться. Тянут ВНИЗ, а сетка уже наверху → ведём шит (свернуть/закрыть)
-  // — на обеих платформах. Плюс на iOS в свёрнутом состоянии скролл выключен,
-  // поэтому весь жест ведёт шит. На Android capture в свёрнутом НЕ включаем:
-  // иначе пан-обёртка перехватывает касания и тап по фото не срабатывает —
-  // закрытие на Android остаётся за шапкой/грабером/крестиком/фоном.
+  // скроллиться. ТОЛЬКО на iOS. На Android capture по контенту НЕ включаем
+  // вообще — иначе пан-обёртка съедает тап по фото (при тапе палец чуть дёргается
+  // вниз, и у верха списка capture уводит касание в перетаскивание шита, фото не
+  // выбирается). На Android закрытие остаётся за шапкой/грабером/крестиком/фоном.
   const contentPan = useRef(
     makePan((g) => {
+      if (Platform.OS !== 'ios') return false;
       if (!isVertical(g)) return false;
       if (g.dy > 0 && scrollYRef.current <= 0) return true;
-      if (Platform.OS === 'ios' && offsetRef.current !== 0) return true;
+      if (offsetRef.current !== 0) return true;
       return false;
     }),
   ).current;
