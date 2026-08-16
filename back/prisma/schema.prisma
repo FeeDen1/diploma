@@ -169,6 +169,7 @@ enum TaskCategory {
   outdoor
   teambuilding
   activism
+  other
 }
 
 enum SubmissionStatus {

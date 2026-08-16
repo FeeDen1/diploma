@@ -5,7 +5,8 @@ export type TaskCategory =
   | 'sport'
   | 'outdoor'
   | 'teambuilding'
-  | 'activism';
+  | 'activism'
+  | 'other';
 
 export const TASK_CATEGORY_LABELS: Record<TaskCategory, string> = {
   study: 'Учеба',
@@ -13,6 +14,7 @@ export const TASK_CATEGORY_LABELS: Record<TaskCategory, string> = {
   outdoor: 'Активный отдых',
   teambuilding: 'Сплочение',
   activism: 'Активизм',
+  other: 'Разное',
 };
 
 /** Короткие лейблы для компактных чипов */
@@ -22,6 +24,7 @@ export const TASK_CATEGORY_SHORT_LABELS: Record<TaskCategory, string> = {
   outdoor: 'Отдых',
   teambuilding: 'Сплочение',
   activism: 'Активизм',
+  other: 'Разное',
 };
 
 export const TASK_CATEGORIES: TaskCategory[] = [
@@ -30,6 +33,7 @@ export const TASK_CATEGORIES: TaskCategory[] = [
   'outdoor',
   'teambuilding',
   'activism',
+  'other',
 ];
 
 /**

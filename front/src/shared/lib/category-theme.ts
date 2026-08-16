@@ -24,6 +24,7 @@ export const TASK_CATEGORY_THEME: Record<TaskCategory, CategoryTheme> = {
   outdoor: { color: '#E0863A', icon: 'leaf-outline' },
   teambuilding: { color: '#D4537E', icon: 'people-outline' },
   activism: { color: '#7C6FE0', icon: 'megaphone-outline' },
+  other: { color: '#64748B', icon: 'apps-outline' },
 };
 
 /**
