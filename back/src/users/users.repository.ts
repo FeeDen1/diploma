@@ -42,6 +42,23 @@ export class UsersRepository {
     });
   }
 
+  /** Ключи всех S3-объектов, принадлежащих пользователю (аватар, фото сдач). */
+  async findOwnedObjectKeys(userId: string): Promise<string[]> {
+    const files = await this.prisma.file.findMany({
+      where: { ownerUserId: userId },
+      select: { objectKey: true },
+    });
+    return files.map((file) => file.objectKey);
+  }
+
+  /**
+   * Полное удаление пользователя. Связанные строки (сдачи, файлы-записи,
+   * токены, членства, редемпшны, OTP) уносит каскад БД (onDelete: Cascade).
+   */
+  async deleteById(userId: string): Promise<void> {
+    await this.prisma.user.delete({ where: { id: userId } });
+  }
+
   async findMembershipGroups(userId: string): Promise<Group[]> {
     const memberships = await this.prisma.groupMember.findMany({
       where: { userId },

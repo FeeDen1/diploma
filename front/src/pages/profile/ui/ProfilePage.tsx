@@ -3,7 +3,8 @@ import { ActivityIndicator, ScrollView, View } from 'react-native';
 import { router } from 'expo-router';
 import { Button } from '@shared/ui/Button';
 import { Card } from '@shared/ui/Card';
-import { useMe } from '@entities/user';
+import { useConfirm, useToast } from '@shared/ui';
+import { useMe, useDeleteAccount } from '@entities/user';
 import { useMySubmissions } from '@entities/submission';
 import { useTasksCount } from '@entities/task';
 import { ProfileHeader, UserProgress } from '@features/profile';
@@ -22,6 +23,9 @@ export function ProfilePage(): React.ReactElement {
   const { data: submissions } = useMySubmissions();
   const { data: totalTasksCount } = useTasksCount();
   const logout = useLogout();
+  const deleteAccount = useDeleteAccount();
+  const confirm = useConfirm();
+  const toast = useToast();
 
   const completedCount = useMemo(
     () => (submissions ?? []).filter((submission) => submission.status === 'approved').length,
@@ -32,6 +36,23 @@ export function ProfilePage(): React.ReactElement {
   const handleLogout = (): void => {
     logout.mutate(undefined, {
       onSettled: () => router.replace('/(auth)/login'),
+    });
+  };
+
+  const handleDeleteAccount = async (): Promise<void> => {
+    const ok = await confirm({
+      title: 'Удалить аккаунт?',
+      message:
+        'Аккаунт и все связанные данные — сдачи, фото, баллы и заказы — ' +
+        'будут удалены безвозвратно. Это действие нельзя отменить.',
+      confirmText: 'Удалить',
+      destructive: true,
+    });
+    if (!ok) return;
+    deleteAccount.mutate(undefined, {
+      onSuccess: () => router.replace('/(auth)/login'),
+      onError: () =>
+        toast.show('Не удалось удалить аккаунт. Попробуйте позже.', 'error'),
     });
   };
 
@@ -86,12 +107,22 @@ export function ProfilePage(): React.ReactElement {
         <ThemeToggle />
       </View>
 
-      <View className="px-4 mt-6 mb-8">
+      <View className="px-4 mt-6">
         <Button
           title="Выйти"
           variant="outline"
           onPress={handleLogout}
           loading={logout.isPending}
+          fullWidth
+        />
+      </View>
+
+      <View className="px-4 mt-3 mb-8">
+        <Button
+          title="Удалить аккаунт"
+          variant="danger"
+          onPress={() => void handleDeleteAccount()}
+          loading={deleteAccount.isPending}
           fullWidth
         />
       </View>

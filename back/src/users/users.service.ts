@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { UsersRepository, UserWithAvatar } from './users.repository';
 import { CreateUserDto } from './dto/create-user.dto';
 import { EntityAlreadyExistsException } from '../common/exceptions/conflict.exception';
@@ -9,10 +9,33 @@ import { S3Service } from '../s3/s3.service';
 
 @Injectable()
 export class UsersService {
+  private readonly logger = new Logger(UsersService.name);
+
   constructor(
     private readonly usersRepository: UsersRepository,
     private readonly s3Service: S3Service,
   ) {}
+
+  /**
+   * Полное удаление своего аккаунта и всех связанных данных (сдачи, фото,
+   * токены, членства, редемпшны). Строки в БД уносит каскад; S3-объекты
+   * (внешние, нетранзакционные) чистим после коммита БД — best-effort.
+   */
+  async deleteMe(userId: string): Promise<void> {
+    await this.getUserById(userId);
+    const objectKeys = await this.usersRepository.findOwnedObjectKeys(userId);
+    await this.usersRepository.deleteById(userId);
+
+    await Promise.all(
+      objectKeys.map((key) =>
+        this.s3Service.delete(key).catch((err: unknown) => {
+          this.logger.warn(
+            `Не удалось удалить S3-объект "${key}" при удалении аккаунта ${userId}: ${String(err)}`,
+          );
+        }),
+      ),
+    );
+  }
 
   async createUser(dto: CreateUserDto): Promise<UserWithAvatar> {
     const existing = await this.usersRepository.findByEmail(dto.email);

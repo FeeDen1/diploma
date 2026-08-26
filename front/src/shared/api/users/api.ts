@@ -41,6 +41,10 @@ export const usersApi = {
     await apiClient.delete(`/users/me/groups/${groupId}`);
   },
 
+  async deleteMe(): Promise<void> {
+    await apiClient.delete('/users/me');
+  },
+
   async changeRole(id: string, dto: ChangeRoleDto): Promise<ReadUserDto> {
     const { data } = await apiClient.patch<ReadUserDto>(`/users/${id}/role`, dto);
     return data;

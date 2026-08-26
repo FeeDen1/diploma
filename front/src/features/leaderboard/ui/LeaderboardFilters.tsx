@@ -6,7 +6,7 @@ import {
   DIRECTION_LABELS,
   type Direction,
 } from '@shared/api/groups';
-import { useGroups } from '@entities/group';
+import { useGroups, isHiddenGroup } from '@entities/group';
 
 interface Props {
   direction: Direction | null;
@@ -25,7 +25,7 @@ export function LeaderboardFilters({
   const sortedGroups = useMemo(
     () =>
       (groups ?? [])
-        .slice()
+        .filter((group) => !isHiddenGroup(group))
         .sort((first, second) => first.name.localeCompare(second.name)),
     [groups],
   );

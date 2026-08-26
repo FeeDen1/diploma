@@ -21,6 +21,7 @@ const NUMBER_TO_DIRECTION: Record<string, Direction> = {
   '07': 'pmi',
   '08': 'pmi',
   '09': 'pmi',
+  '10': 'pmi',
   '11': 'piit',
   '12': 'piit',
   '13': 'piit',
@@ -28,6 +29,8 @@ const NUMBER_TO_DIRECTION: Record<string, Direction> = {
   '15': 'bd',
   '16': 'bd',
   '17': 'bd',
+  '21': 'piit',
+  '22': 'piit',
   '24': 'pkt',
 };
 
@@ -40,12 +43,13 @@ const GROUPS: GroupSeed[] = Object.entries(NUMBER_TO_DIRECTION).map(
 );
 
 /**
- * Тестовая группа для прохождения e2e-сценариев на проде без замусоривания
- * реального лидерборда первокурсников. Лежит на направлении ПМИ — оно
- * самое массовое, и тестовая группа не выделится в фильтрах.
+ * Служебная группа «Куратор»: в неё записываются кураторы. Скрыта из
+ * пользовательских фильтров и рейтинга (см. HIDDEN_GROUP_NAMES на фронте и
+ * исключение в leaderboard.repository), но доступна при регистрации. Лежит на
+ * ПМИ — направление роли не играет, т.к. группа всё равно скрыта.
  */
-const TEST_GROUPS: GroupSeed[] = [
-  { name: 'Test', number: 'test', direction: 'pmi' },
+const SERVICE_GROUPS: GroupSeed[] = [
+  { name: 'Куратор', number: 'curator', direction: 'pmi' },
 ];
 
 async function main(): Promise<void> {
@@ -59,7 +63,7 @@ async function main(): Promise<void> {
   });
 
   try {
-    for (const group of [...GROUPS, ...TEST_GROUPS]) {
+    for (const group of [...GROUPS, ...SERVICE_GROUPS]) {
       await prisma.group.upsert({
         where: { name: group.name },
         update: { direction: group.direction, year: ENROLLMENT_YEAR },

@@ -4,6 +4,7 @@ import {
   Delete,
   forwardRef,
   Get,
+  HttpCode,
   Inject,
   Param,
   ParseUUIDPipe,
@@ -90,5 +91,15 @@ export class UsersMeController {
     @CurrentUser() currentUser: TokenPayload,
   ): Promise<void> {
     await this.groupsService.removeMember(groupId, currentUser.id);
+  }
+
+  @ApiOperation({
+    summary: 'Удалить свой аккаунт и все связанные данные (безвозвратно)',
+  })
+  @ApiResponse({ status: 204 })
+  @HttpCode(204)
+  @Delete()
+  async deleteMe(@CurrentUser() currentUser: TokenPayload): Promise<void> {
+    await this.usersService.deleteMe(currentUser.id);
   }
 }

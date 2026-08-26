@@ -22,6 +22,12 @@ export interface LeaderboardFilters {
   sort?: LeaderboardSort;
 }
 
+/**
+ * Служебные группы, участники которых не попадают в рейтинг (кураторы). Держим
+ * согласованно с фронтом (entities/group HIDDEN_GROUP_NAMES). Совпадение по имени.
+ */
+const HIDDEN_GROUP_NAMES = ['Куратор'];
+
 const SORT_ORDER: Record<
   LeaderboardSort,
   Prisma.UserOrderByWithRelationInput[]
@@ -63,6 +69,12 @@ export class LeaderboardRepository {
     // pending и suspended исключаем — это либо непрошедшие OTP, либо заблокированные.
     const where: Prisma.UserWhereInput = {
       status: UserStatus.active,
+      // Участники служебных групп (кураторы) в рейтинге не показываются нигде.
+      NOT: {
+        groupMemberships: {
+          some: { group: { name: { in: HIDDEN_GROUP_NAMES } } },
+        },
+      },
     };
 
     if (filters.groupId) {

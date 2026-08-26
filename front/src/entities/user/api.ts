@@ -6,6 +6,7 @@ import {
   type UseQueryResult,
 } from '@tanstack/react-query';
 import { queryKeys } from '@shared/api';
+import { storage } from '@shared/lib/storage';
 import { usersApi, type UserRole } from '@shared/api/users';
 import { toGroupDomain } from '../group/mappers';
 import type { Group } from '../group/types';
@@ -73,6 +74,23 @@ export function useSetMyAvatar(): UseMutationResult<User, unknown, { fileId: str
     mutationFn: ({ fileId }) => usersApi.setAvatar({ fileId }).then(toUserDomain),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.auth.me });
+    },
+  });
+}
+
+/**
+ * Полное удаление своего аккаунта. После успеха чистим локальные токены и
+ * весь кэш — устройство больше не залогинено (refresh-токен на бэке уже снесён
+ * каскадом). Редирект выполняет вызывающий экран.
+ */
+export function useDeleteAccount(): UseMutationResult<void, unknown, void> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => usersApi.deleteMe(),
+    onSuccess: async () => {
+      await storage.clearTokens();
+      await storage.clearPushToken();
+      qc.clear();
     },
   });
 }
