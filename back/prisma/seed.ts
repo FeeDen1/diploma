@@ -29,8 +29,8 @@ const NUMBER_TO_DIRECTION: Record<string, Direction> = {
   '15': 'bd',
   '16': 'bd',
   '17': 'bd',
+  '18': 'bd',
   '21': 'piit',
-  '22': 'piit',
   '24': 'pkt',
 };
 
