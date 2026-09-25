@@ -47,16 +47,20 @@ import { HealthModule } from './health/health.module';
     // APP_GUARD ниже. Конкретные роуты могут переопределить лимит
     // декоратором @Throttle({ ... }) или отключить через @SkipThrottle().
     //
-    //   short:   10 запросов / 1 секунду  — дребезг кнопок
-    //   medium:  60 запросов / минуту     — обычная активность пользователя
-    //   long:  1000 запросов / час        — общий ceiling на IP
+    //   short:   20 запросов / 1 секунду  — дребезг кнопок
+    //   medium: 150 запросов / минуту     — обычная активность пользователя
+    //   long:  3000 запросов / час        — общий ceiling на IP
+    //
+    // Лимиты считаются ПО РЕАЛЬНОМУ IP (в main.ts включён trust proxy). Даны с
+    // запасом: приложение на фокусе разом дёргает несколько ручек (задания,
+    // рейтинг, профиль, группы), плюс pull-to-refresh — тесные лимиты давали 429.
     //
     // OTP-эндпоинты (verify, resend) дополнительно ограничены своими
     // throttle-декораторами на уровне auth-контроллера.
     ThrottlerModule.forRoot([
-      { name: 'short', ttl: 1_000, limit: 10 },
-      { name: 'medium', ttl: 60_000, limit: 60 },
-      { name: 'long', ttl: 3_600_000, limit: 1_000 },
+      { name: 'short', ttl: 1_000, limit: 20 },
+      { name: 'medium', ttl: 60_000, limit: 150 },
+      { name: 'long', ttl: 3_600_000, limit: 3_000 },
     ]),
     PrismaModule,
     S3Module,

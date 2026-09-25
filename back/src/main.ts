@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { ConfigService } from '@nestjs/config';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -12,9 +13,18 @@ async function bootstrap(): Promise<void> {
   // bufferLogs: true — копим логи бутстрапа, чтобы выдать их через Pino
   // после того, как он зарегистрируется (иначе бы они шли через дефолтный
   // консольный логгер).
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    bufferLogs: true,
+  });
   app.useLogger(app.get(PinoLogger));
   app.useGlobalInterceptors(new LoggerErrorInterceptor());
+
+  // За реверс-прокси (nginx) реальный IP клиента приходит в X-Forwarded-For.
+  // Без trust proxy Express — а значит и rate limiter (@nestjs/throttler) —
+  // видит IP прокси, поэтому ВСЕ пользователи считаются одним IP, и общий
+  // лимит режет всех сразу (массовые 429 под нагрузкой). '1' = один прокси-хоп
+  // (nginx). Если хопов больше (например Cloudflare перед nginx) — увеличить.
+  app.set('trust proxy', 1);
 
   const config = app.get(ConfigService);
   const logger = app.get(PinoLogger);
